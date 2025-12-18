@@ -1,109 +1,308 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# 🎓 ProctorLess
 
 <p align="center">
- The fastest way to build apps with Next.js and Supabase
+  <img src="public/favicon.png" alt="ProctorLess Logo" width="120" />
 </p>
 
 <p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
+  <strong>Privacy-First Smart Assessment Platform with Real-Time Integrity Detection</strong>
 </p>
-<br/>
 
-## Features
+<p align="center">
+  <a href="#-features"><strong>Features</strong></a> ·
+  <a href="#-tech-stack"><strong>Tech Stack</strong></a> ·
+  <a href="#-getting-started"><strong>Getting Started</strong></a> ·
+  <a href="#-architecture"><strong>Architecture</strong></a> ·
+  <a href="#-database-schema"><strong>Database</strong></a>
+</p>
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Supabase-Database-3ECF8E?logo=supabase" alt="Supabase" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss" alt="Tailwind" />
+</p>
 
-## Demo
+---
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+## 📋 Overview
 
-## Deploy to Vercel
+ProctorLess is a modern, privacy-respecting online assessment platform designed for educational institutions. Unlike traditional proctoring software that relies on invasive monitoring, ProctorLess uses smart question distribution and behavioral analysis to maintain exam integrity.
 
-Vercel deployment will guide you through creating a Supabase account and project.
+### Key Differentiators
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+- **🔒 Privacy-First**: No webcam monitoring or screen recording
+- **🎯 Smart Distribution**: Latin Square algorithm ensures adjacent students get different questions
+- **📊 Real-Time Monitoring**: Live dashboard for professors without invasive surveillance
+- **🤖 AI-Powered**: Gemini integration for question parsing and variant generation
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+---
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+## ✨ Features
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+### For Professors
 
-## Clone and run locally
+| Feature | Description |
+|---------|-------------|
+| **Course Management** | Create courses and enroll students |
+| **Quiz Builder** | Upload questions via images/PDFs with AI parsing |
+| **Multi-File Upload** | Batch upload and parse multiple question sources |
+| **Session Control** | Configure seating grids and assign variants |
+| **Live Dashboard** | Real-time student progress monitoring |
+| **AI Grading** | Automated grading with Gemini AI |
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+### For Students
 
-2. Create a Next.js app using the Supabase Starter template npx command
+| Feature | Description |
+|---------|-------------|
+| **Waiting Room** | Join quiz sessions and receive seat assignments |
+| **Synchronized Start** | Fair "green light" start for all students |
+| **Variant Assignment** | Receive unique question set based on seat |
+| **Clean Interface** | Focus-friendly quiz-taking experience |
 
+### For Admins
+
+| Feature | Description |
+|---------|-------------|
+| **User Management** | Manage roles and permissions |
+| **System Overview** | View all courses, quizzes, and users |
+| **Integrity Logs** | Review tab-switch and activity logs |
+
+---
+
+## 🏗 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Frontend (Next.js 16)                     │
+├──────────────────┬──────────────────┬──────────────────────────┤
+│   Auth Pages     │   Dashboard      │   Quiz Engine            │
+│   /auth/*        │   /dashboard     │   /dashboard/quiz/[id]   │
+├──────────────────┴──────────────────┴──────────────────────────┤
+│                        API Routes                                │
+│   /api/gemini/*  │  /api/admin/*   │  /api/integrity/*         │
+└──────────────────┬──────────────────┬──────────────────────────┘
+                   │                  │
+                   ▼                  ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                     Supabase Backend                              │
+├────────────────┬─────────────────┬─────────────────┬────────────┤
+│   PostgreSQL   │   Auth          │   Storage       │   Realtime  │
+│   (Database)   │   (Users)       │   (Files)       │   (Live)    │
+└────────────────┴─────────────────┴─────────────────┴────────────┘
+```
+
+### Seating-Aware Distribution Flow
+
+```mermaid
+flowchart LR
+    A[Professor Creates Session] --> B[Configure Grid]
+    B --> C[Students Join Queue]
+    C --> D[Assign Seats]
+    D --> E[Calculate Variants]
+    E --> F[Green Light Start]
+    F --> G[Students Take Quiz]
+    G --> H[Live Monitoring]
+```
+
+### Latin Square Algorithm
+
+Adjacent students never receive the same question variant:
+
+```
+Formula: variantIndex = ((row × 3) + column) % totalVariants
+
+Example 4x4 Grid with 3 Variants:
+┌───┬───┬───┬───┐
+│ A │ B │ C │ A │
+├───┼───┼───┼───┤
+│ C │ A │ B │ C │
+├───┼───┼───┼───┤
+│ B │ C │ A │ B │
+├───┼───┼───┼───┤
+│ A │ B │ C │ A │
+└───┴───┴───┴───┘
+```
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Framework** | Next.js 16 (App Router + Turbopack) |
+| **Language** | TypeScript 5 |
+| **Styling** | Tailwind CSS + shadcn/ui |
+| **Database** | Supabase (PostgreSQL) |
+| **Auth** | Supabase Auth |
+| **AI** | Google Gemini API |
+| **Realtime** | Supabase Realtime |
+| **Storage** | Supabase Storage |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- Supabase account
+- Google Gemini API key (optional, for AI features)
+
+### Installation
+
+1. **Clone the repository**
    ```bash
-   npx create-next-app --example with-supabase with-supabase-app
+   git clone https://github.com/Taif6612/proctorless-app.git
+   cd proctorless-app
    ```
 
+2. **Install dependencies**
    ```bash
-   yarn create next-app --example with-supabase with-supabase-app
+   npm install
    ```
 
+3. **Configure environment**
    ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
+   cp .env.example .env.local
+   ```
+   
+   Update `.env.local` with your credentials:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+   GEMINI_API_KEY=your_gemini_key
    ```
 
-3. Use `cd` to change into the app's directory
+4. **Run database migrations**
+   
+   Execute the SQL files in Supabase SQL Editor:
+   - `QUIZ_TABLES_SETUP.sql`
+   - `SEATING_MIGRATION.sql`
+   - Enable Realtime for `quiz_sessions` and `session_participants`
 
-   ```bash
-   cd with-supabase-app
-   ```
-
-4. Rename `.env.example` to `.env.local` and update the following:
-
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
-
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
-
-5. You can now run the Next.js local development server:
-
+5. **Start development server**
    ```bash
    npm run dev
    ```
+   
+   Open [http://localhost:3003](http://localhost:3003)
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+---
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+## 🗄 Database Schema
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+```mermaid
+erDiagram
+    USERS ||--o{ ENROLLMENTS : has
+    USERS ||--o{ SUBMISSIONS : submits
+    COURSES ||--o{ ENROLLMENTS : contains
+    COURSES ||--o{ QUIZZES : has
+    QUIZZES ||--o{ QUESTIONS : contains
+    QUIZZES ||--o{ QUIZ_SESSIONS : has
+    QUIZ_SESSIONS ||--o{ SESSION_PARTICIPANTS : contains
+    
+    USERS {
+        uuid id PK
+        string email
+        string role
+    }
+    
+    COURSES {
+        uuid id PK
+        string name
+        uuid professor_id FK
+    }
+    
+    QUIZZES {
+        uuid id PK
+        string title
+        uuid course_id FK
+        jsonb questions
+    }
+    
+    QUIZ_SESSIONS {
+        uuid id PK
+        uuid quiz_id FK
+        int rows
+        int columns
+        string status
+        timestamp start_time
+    }
+    
+    SESSION_PARTICIPANTS {
+        uuid id PK
+        uuid session_id FK
+        uuid student_id FK
+        int seat_row
+        int seat_column
+        int variant_index
+    }
+```
 
-## Feedback and issues
+---
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+## 📁 Project Structure
 
-## More Supabase examples
+```
+proctorless-app/
+├── app/
+│   ├── api/              # API routes
+│   │   ├── admin/        # Admin endpoints
+│   │   ├── gemini/       # AI extraction & variations
+│   │   └── integrity/    # Tab monitoring
+│   ├── auth/             # Authentication pages
+│   ├── dashboard/        # Main dashboard
+│   │   ├── course/       # Course management
+│   │   ├── quiz/         # Quiz pages
+│   │   │   └── [id]/
+│   │   │       ├── session/   # Professor session control
+│   │   │       ├── waiting/   # Student waiting room
+│   │   │       └── live/      # Live monitoring
+│   │   └── results/      # Results dashboard
+│   └── admin/            # Admin panel
+├── components/           # Reusable UI components
+├── lib/                  # Utilities
+│   ├── supabase/         # Supabase clients
+│   └── seating.ts        # Latin Square algorithm
+└── supabase/
+    ├── functions/        # Edge functions
+    └── migrations/       # Database migrations
+```
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+---
+
+## 🔐 Security
+
+- **Row Level Security (RLS)**: All tables protected with granular policies
+- **Role-Based Access**: Professor, Student, Admin roles
+- **Secure Authentication**: Supabase Auth with session management
+- **Protected Routes**: Middleware ensures authorized access
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 👥 Team
+
+Built with ❤️ for modern education.
+
+---
+
+<p align="center">
+  <strong>ProctorLess</strong> — Making assessments fair, private, and intelligent.
+</p>
