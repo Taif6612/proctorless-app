@@ -1,0 +1,88 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "Next.js 16 App Router",
+    "Supabase (Postgres, Auth, Storage)",
+    "Tailwind CSS",
+    "@google/genai (Gemini)",
+    "Sonner (toasts)"
+  ],
+  "features": [
+    {
+      "name": "Dashboard Home",
+      "description": "Professor/student landing with actions to create quizzes, navigate to quiz editor and student quiz.",
+      "files": [
+        "app/dashboard/page.tsx",
+        "app/dashboard/actions.ts"
+      ]
+    },
+    {
+      "name": "Quiz Editor",
+      "description": "Edit quiz questions, reorder, delete, set max marks and correct answers. Configure timer buffer/duration.",
+      "files": [
+        "app/dashboard/quiz/[id]/edit/page.tsx"
+      ]
+    },
+    {
+      "name": "Student Quiz",
+      "description": "Student takes quiz with 5-minute buffer, optional timer, floating timer UI, input locking, draft answer autosave.",
+      "files": [
+        "app/dashboard/quiz/[id]/page.tsx",
+        "lib/extensionHelper.ts"
+      ]
+    },
+    {
+      "name": "Results Dashboard",
+      "description": "Professor views submissions, integrity violations, extension URL logs, per-question grading save.",
+      "files": [
+        "app/dashboard/results/[quizId]/page.tsx"
+      ]
+    },
+    {
+      "name": "Profile Settings",
+      "description": "User profile and password update, avatar upload to Supabase Storage.",
+      "files": [
+        "app/profile/page.tsx",
+        "components/profile-settings.tsx",
+        "components/logout-button.tsx",
+        "components/auth-button.tsx"
+      ]
+    },
+    {
+      "name": "Gemini & OCR API",
+      "description": "Image parsing via Gemini with retry/backoff and OCR fallback; diagnostics and test endpoints.",
+      "files": [
+        "app/api/gemini/extract/route.ts",
+        "app/api/gemini/test/route.ts",
+        "app/api/gemini/diag/route.ts",
+        "app/api/ocr/parse/route.ts"
+      ]
+    },
+    {
+      "name": "Middleware & Auth",
+      "description": "Next middleware route allowlist for API testing; Supabase client/server auth utilities.",
+      "files": [
+        "middleware.ts",
+        "lib/supabase/client.ts",
+        "lib/supabase/server.ts"
+      ]
+    },
+    {
+      "name": "Storage Buckets",
+      "description": "Supabase Storage paths used by app: question banks, drafts, grades, avatars.",
+      "files": [
+        "supabase/migrations",
+        "app/dashboard/quiz/[id]/page.tsx",
+        "app/dashboard/quiz/[id]/edit/page.tsx"
+      ]
+    },
+    {
+      "name": "Integrity Monitor",
+      "description": "Tab switch detection and logging; extension URL log correlation to allowed domains.",
+      "files": [
+        "app/dashboard/quiz/[id]/page.tsx",
+        "app/dashboard/results/[quizId]/page.tsx"
+      ]
+    }
+  ]
+}

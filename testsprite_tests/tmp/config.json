@@ -1,0 +1,17 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3003",
+  "loginUser": "taifurrahman66123@gmail.com",
+  "loginPassword": "alnoor316",
+  "executionArgs": {
+    "projectName": "proctorless-app",
+    "projectPath": "c:\\Users\\ASUS\\Desktop\\Smart assessment tool\\proctorless-app",
+    "testIds": [],
+    "additionalInstruction": "Focus on these flows: dashboard loads; quiz editor opens and saves timer settings; reorder/delete question; student quiz shows buffer, blocks input, timer starts after buffer when enabled; draft autosaves on input; submit locks inputs; results page shows extension URL logs with readable text; Gemini extract route reachable and falls back to OCR on error.\nUse baseUrl http://localhost:3003/ for local navigation.",
+    "envs": {
+      "API_KEY": "sk-user-qa3Vnrw-oATcqwEuZuyhQldP24D9TcdRep-iJD39862Lajip0pJpjNFtQ9x_6Pfzq3IFEPWw9jUCdvLAafK7g1uzOw_c_2WEGoLgTSO9Uhwe_CI6AszH_4a78UewSAg7OIs"
+    }
+  }
+}

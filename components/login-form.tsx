@@ -38,8 +38,7 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push("/protected");
+      router.push("/dashboard");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -49,55 +48,80 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
+      <Card className="shadow-2xl border border-slate-200 bg-white rounded-2xl overflow-hidden">
+        <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+        <CardHeader className="text-center pb-8 pt-6">
+          <CardTitle className="text-2xl font-bold text-slate-800">
+            Sign In
+          </CardTitle>
+          <CardDescription className="text-slate-600 mt-2">
+            Access your learning dashboard
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="animate-[scaleIn_300ms_ease] px-8 pb-8">
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                  Email Address
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="Enter your email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-12 px-4 border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-slate-900"
                 />
               </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+                    Password
+                  </Label>
                   <Link
                     href="/auth/forgot-password"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
                   >
-                    Forgot your password?
+                    Forgot password?
                   </Link>
                 </div>
                 <Input
                   id="password"
                   type="password"
+                  placeholder="Enter your password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="h-12 px-4 border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-slate-900"
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-600 font-medium">{error}</p>
+                </div>
+              )}
+              <Button
+                type="submit"
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Signing in...
+                  </div>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
+            <div className="mt-6 text-center text-sm">
+              <span className="text-slate-600">Don't have an account? </span>
               <Link
                 href="/auth/sign-up"
-                className="underline underline-offset-4"
+                className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
               >
                 Sign up
               </Link>

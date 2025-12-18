@@ -1,0 +1,548 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Authentication - Successful Login",
+    "description": "Verify that users with correct credentials and assigned roles (Professor or Student) can successfully log in.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid username/email and password for a Professor account."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login is successful and Professor dashboard is displayed."
+      },
+      {
+        "type": "action",
+        "description": "Log out and repeat with valid Student credentials."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login is successful and Student dashboard is displayed."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Authentication - Failed Login with Invalid Credentials",
+    "description": "Verify that login fails with invalid username/email or password and appropriate error message is displayed.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid username/email and/or password."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that login is unsuccessful and an error message indicating incorrect credentials is shown."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Professor Creates a Course and Generates Join Code",
+    "description": "Verify that a Professor can create a new course and a unique join code is generated for student enrollment.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Professor and navigate to the course management section."
+      },
+      {
+        "type": "action",
+        "description": "Initiate new course creation by providing required course details."
+      },
+      {
+        "type": "action",
+        "description": "Submit the course creation form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the course is created successfully and a unique join code is displayed."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Student Joins a Course Using Join Code",
+    "description": "Verify that a Student can join a course by entering a valid join code.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as a Student."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the course enrollment page."
+      },
+      {
+        "type": "action",
+        "description": "Enter the valid join code provided by a Professor."
+      },
+      {
+        "type": "action",
+        "description": "Submit the join request."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that the Student is successfully enrolled in the course."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Professor Creates Quiz with Question Bank and Configurable Options",
+    "description": "Verify that a Professor can create a quiz by uploading a question bank, setting timer and buffer, enabling integrity monitoring, defining allowed domains, and enabling AI grading.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Professor and open quiz creation form."
+      },
+      {
+        "type": "action",
+        "description": "Upload a valid question bank file."
+      },
+      {
+        "type": "action",
+        "description": "Configure quiz timer duration and buffer."
+      },
+      {
+        "type": "action",
+        "description": "Enable integrity monitoring and input allowed websites list."
+      },
+      {
+        "type": "action",
+        "description": "Enable AI-assisted grading option."
+      },
+      {
+        "type": "action",
+        "description": "Submit the quiz creation form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the quiz is created successfully with the configured options saved."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Student Takes Quiz with Timer, Autosave, and Tab Switch Detection",
+    "description": "Verify that the Student receives randomized quiz questions, the timer UI is visible with buffer, answers autosave periodically, and tab switch detection logs violations excluding allowed websites.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Student and join a course with an assigned quiz."
+      },
+      {
+        "type": "action",
+        "description": "Start the quiz and observe randomized questions."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the quiz timer with buffer is displayed and counting down correctly."
+      },
+      {
+        "type": "action",
+        "description": "Answer some questions partially and wait for autosave interval."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that answers are autosaved and persisted after page reload."
+      },
+      {
+        "type": "action",
+        "description": "Switch tabs or windows to websites not on the allowed list."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that tab switch events are detected and logged with timestamps."
+      },
+      {
+        "type": "action",
+        "description": "Switch to allowed websites during the quiz."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that tab switch events to allowed sites are not logged."
+      },
+      {
+        "type": "action",
+        "description": "Submit quiz answers before time expiration."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful submission and confirmation message."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Integrity Monitor Logs Tab Switch Events with Exclusions",
+    "description": "Verify that the integrity monitor detects and logs tab switch events excluding allowed websites, linking logs correctly to student and quiz in database.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Take quiz as Student with configured allowed websites."
+      },
+      {
+        "type": "action",
+        "description": "Switch browser tab to a non-allowed website repeatedly."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that each tab switch event outside allowed sites is logged with correct timestamp."
+      },
+      {
+        "type": "action",
+        "description": "Switch browser tab to allowed websites multiple times."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that no tab switch logs are generated for allowed sites."
+      },
+      {
+        "type": "action",
+        "description": "Log in as Professor and open results dashboard for the quiz."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm presence of tab switch log entries linked to the student’s quiz attempt."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Professor Uses AI-Assisted Grading Button",
+    "description": "Verify that the AI grading button calls the live AI API via Supabase Edge Function and displays AI-generated grades and feedback on essay questions correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Professor and navigate to the results dashboard for a quiz with essay questions."
+      },
+      {
+        "type": "action",
+        "description": "Select a student's submission and click the AI-assisted grading button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the button triggers API call to Supabase Edge Function and waits for response."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that AI-generated grades and feedback are displayed accurately and promptly."
+      },
+      {
+        "type": "action",
+        "description": "Manually override AI-generated grades and save changes."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that overridden grades are saved correctly and reflected in the results dashboard."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Results Dashboard Displays Student Submissions and Integrity Logs",
+    "description": "Verify that the results dashboard shows comprehensive student submissions, grades, detailed integrity event logs, and supports per-question grading updates.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Professor and open the results dashboard of a quiz."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that student submissions with answers and calculated grades are listed."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify detailed integrity logs such as tab switch events are visible and match recorded data."
+      },
+      {
+        "type": "action",
+        "description": "Edit per-question grading values for a chosen student submission."
+      },
+      {
+        "type": "action",
+        "description": "Save the updated grades."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that grade updates are saved and reflected immediately."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "User Profile Updates and Avatar Upload",
+    "description": "Verify that both Professors and Students can update their profile information and upload avatar images to Supabase Storage successfully.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as either Professor or Student."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to profile settings page."
+      },
+      {
+        "type": "action",
+        "description": "Update profile fields such as name, email, and password."
+      },
+      {
+        "type": "action",
+        "description": "Upload a valid avatar image file."
+      },
+      {
+        "type": "action",
+        "description": "Save the profile changes."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that profile fields are updated with new information."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm avatar image is uploaded to Supabase Storage and displayed on profile."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Middleware and Secure Access Controls",
+    "description": "Verify that middleware correctly allows or blocks API routes based on authentication and role-based access control.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to access protected API routes as unauthenticated user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that access is denied with appropriate HTTP status code."
+      },
+      {
+        "type": "action",
+        "description": "Log in as Student and access Professor-only API routes."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that access is denied for role-restricted endpoints."
+      },
+      {
+        "type": "action",
+        "description": "Log in as Professor and access authorized routes."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm access is granted and data is returned."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Storage Buckets Management for Question Banks, Drafts, Grades, and Avatars",
+    "description": "Verify that the platform correctly stores and retrieves files in Supabase buckets used for question banks, draft quiz answers, grades, and avatars.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "As Professor, upload a question bank to the designated storage bucket."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the question bank file is stored correctly and accessible."
+      },
+      {
+        "type": "action",
+        "description": "During a Student quiz, confirm that draft answers autosave to the draft bucket."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify draft data file exists and is updated as expected."
+      },
+      {
+        "type": "action",
+        "description": "Upload and retrieve student avatars and grade-related files successfully."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm files are stored in expected buckets and can be accessed by authorized users."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Stress-Free Student Quiz Experience Under Normal and Edge Conditions",
+    "description": "Verify that quiz interface behaves correctly including timer buffers, floating UI, input locking when submitted, and robustness under slow network conditions or page reloads.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Start quiz as Student with timer enabled."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm floating timer UI is visible and updates correctly."
+      },
+      {
+        "type": "action",
+        "description": "Simulate slow network and submit answers."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify answers are successfully submitted without data loss."
+      },
+      {
+        "type": "action",
+        "description": "Reload quiz page mid-quiz and confirm previously autosaved answers are restored."
+      },
+      {
+        "type": "action",
+        "description": "Submit the quiz and verify that input fields become locked to prevent changes."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Edge Case: Course Join Code Collision Handling",
+    "description": "Verify that the system generates unique join codes and handles any potential collision or duplication gracefully during course creation.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate or attempt course creations that might generate join code collisions."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system detects duplication and regenerates a unique join code without error."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Error Handling: Quiz Upload Failure",
+    "description": "Verify that invalid question bank uploads (wrong file types, corrupted data) are rejected with clear error messaging.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload an invalid or corrupt question bank file in quiz editor."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify upload is rejected and user receives meaningful error message."
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Validation of Allowed Websites Filter Format and Behavior",
+    "description": "Verify that entering invalid URLs or malformed allowed website entries during quiz creation shows validation errors and does not accept the input.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enter invalid URLs or malformed entries in allowed websites field during quiz creation."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that validation errors are shown and form submission is blocked."
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Profile Update Persistence and Revert",
+    "description": "Verify that profile updates persist after logout/login and that canceling edits reverts changes.",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Update profile details and save."
+      },
+      {
+        "type": "action",
+        "description": "Logout and log back in to verify persistence."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that profile data is saved and displayed correctly after login."
+      },
+      {
+        "type": "action",
+        "description": "Make profile changes and then cancel."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that no changes are saved and original profile data remains."
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Full End-to-End Flow Test",
+    "description": "Verify that the complete user journey from Professor creating course and quiz to Student taking quiz and Professor grading works end-to-end with no critical issues.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Professor, create a course, create a quiz with all options, and generate join code."
+      },
+      {
+        "type": "action",
+        "description": "Log in as Student, join course with join code, take quiz with integrity monitoring, and submit."
+      },
+      {
+        "type": "action",
+        "description": "Log back as Professor and review submissions, integrity logs, and use AI grading."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each step completes without blocking bugs or errors and data flows consistently."
+      }
+    ]
+  }
+]
