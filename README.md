@@ -68,6 +68,37 @@ ProctorLess is a modern, privacy-respecting online assessment platform designed 
 | **System Overview** | View all courses, quizzes, and users |
 | **Integrity Logs** | Review tab-switch and activity logs |
 
+### 🧩 Chrome Extension
+
+The **ProctorLess Integrity Monitor** is a lightweight Chrome extension that works alongside the web platform.
+
+| Feature | Description |
+|---------|-------------|
+| **Tab Monitoring** | Detects when students switch tabs during quizzes |
+| **Activity Logging** | Sends tab-switch events to the platform API |
+| **Privacy-Respecting** | Only logs tab switches, no screenshots or webcam |
+| **Auto-Connect** | Seamlessly integrates with active quiz sessions |
+
+#### Extension Installation
+
+1. Navigate to `chrome://extensions/` in Chrome
+2. Enable **Developer mode** (top right toggle)
+3. Click **Load unpacked**
+4. Select the `proctorless-extension` folder from this repository
+5. The extension icon will appear in your toolbar
+
+#### Extension Files
+
+```
+proctorless-extension/
+├── manifest.json       # Extension configuration
+├── background.js       # Service worker for tab monitoring
+├── content.js          # Content script injection
+├── popup.html          # Extension popup UI
+├── popup.js            # Popup logic
+└── icons/              # Extension icons
+```
+
 ---
 
 ## 🏗 Architecture

@@ -1,0 +1,26 @@
+<!-- 
+  Temporary workaround: Create icon using canvas and save
+  Or download a simple icon and place it as icons/icon.png
+  
+  For now, we'll make the manifest not require an icon by removing it
+-->
+
+To fix the icon issue, you have two options:
+
+OPTION 1: Download a simple icon (EASIEST)
+1. Go to: https://www.flaticon.com/free-icons/eye (free icons)
+2. Download any 128x128 PNG icon
+3. Save it to: proctorless-extension/icons/icon.png
+4. Done!
+
+OPTION 2: Remove icon requirement (QUICKEST)
+1. Edit manifest.json
+2. Remove the "icons" section entirely
+3. Extension will use default Chrome icon
+4. Still fully functional!
+
+OPTION 3: Use a simple placeholder
+1. Create a 128x128 pixel image in Paint/Photoshop
+2. Save as PNG to: proctorless-extension/icons/icon.png
+
+We recommend OPTION 2 (quickest fix) - the extension works fine without a custom icon.
