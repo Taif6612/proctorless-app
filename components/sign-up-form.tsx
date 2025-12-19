@@ -23,6 +23,7 @@ export function SignUpForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  const [role, setRole] = useState<"student" | "professor">("student");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -40,14 +41,26 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/protected`,
+          data: {
+            role: role, // Store role in user metadata
+          },
         },
       });
       if (error) throw error;
+
+      // Create user_roles entry if signup was successful
+      if (data?.user?.id) {
+        await supabase.from('user_roles').insert({
+          user_id: data.user.id,
+          role: role,
+        });
+      }
+
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -100,6 +113,31 @@ export function SignUpForm({
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
+              </div>
+              <div className="grid gap-2">
+                <Label>I am a</Label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRole("student")}
+                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all ${role === "student"
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "bg-white text-slate-700 border-slate-300 hover:border-indigo-400"
+                      }`}
+                  >
+                    🎓 Student
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole("professor")}
+                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all ${role === "professor"
+                        ? "bg-purple-600 text-white border-purple-600"
+                        : "bg-white text-slate-700 border-slate-300 hover:border-purple-400"
+                      }`}
+                  >
+                    👨‍🏫 Teacher
+                  </button>
+                </div>
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>

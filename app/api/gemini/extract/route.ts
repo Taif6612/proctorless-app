@@ -13,6 +13,8 @@ function buildPrompt() {
   return (
     "You are an exam assistant. Extract all questions from the provided content and return strictly JSON. " +
     "Each question must be an object with fields: order_index (number), type ('mcq'|'text'|'boolean'|'numeric'), prompt (string), choices (array of strings, optional for MCQ/boolean), max_marks (number, optional). " +
+    "IMPORTANT: For mathematical expressions, equations, fractions, matrices, or any formatted math content, preserve formatting using LaTeX notation. Wrap inline math with $...$ and display math with $$...$$. " +
+    "Examples: '$x^2 + y^2 = r^2$', '$\\\\frac{a}{b}$', '$$\\\\int_0^\\\\infty e^{-x^2} dx$$', matrices as '$$\\\\begin{pmatrix} a & b \\\\\\\\ c & d \\\\end{pmatrix}$$'. " +
     "Detect multiple-choice options (A/B/C/D), true/false, numeric, and free-text. If marks are indicated like '(5 marks)', include max_marks. " +
     "Respond ONLY with JSON in the shape: {\"questions\": [ ... ] }."
   );
@@ -98,7 +100,7 @@ async function callGeminiImage(b64: string, mimeType: string) {
           }
           const part = response?.candidates?.[0]?.content?.parts?.[0];
           if (part) {
-            try { return { result: JSON.parse(JSON.stringify(part)) }; } catch {}
+            try { return { result: JSON.parse(JSON.stringify(part)) }; } catch { }
           }
           lastErr = response;
         } catch (e: any) {
@@ -127,7 +129,7 @@ async function callGeminiImage(b64: string, mimeType: string) {
                   if (fallback.length > 0) return { result: { questions: fallback } };
                 }
               }
-            } catch {}
+            } catch { }
           }
           break;
         }
@@ -204,9 +206,12 @@ export async function POST(req: NextRequest) {
     if (!fileUrl || !contentType) {
       return NextResponse.json({ ok: false, error: "fileUrl and contentType required" }, { status: 400 });
     }
-    if (contentType.startsWith("image/")) {
+
+    // Gemini supports images and PDFs directly
+    if (contentType.startsWith("image/") || contentType === "application/pdf") {
       const b64 = await fetchBase64(fileUrl);
-      const out = await callGeminiImage(b64, contentType);
+      const mimeType = contentType === "application/pdf" ? "application/pdf" : contentType;
+      const out = await callGeminiImage(b64, mimeType);
       if ((out as any).error) {
         // Fallback: do OCR then parse locally
         const ocr = await callOcr(fileUrl);
@@ -220,7 +225,7 @@ export async function POST(req: NextRequest) {
       const questions = (out as any).result?.questions || [];
       return NextResponse.json({ ok: true, questions });
     }
-    // Non-image types: use OCR directly
+    // Non-image/non-PDF types: use OCR directly
     const ocr = await callOcr(fileUrl);
     if ((ocr as any).error) {
       return NextResponse.json({ ok: false, error: (ocr as any).error }, { status: 500 });

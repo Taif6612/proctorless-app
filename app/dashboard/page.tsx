@@ -127,9 +127,41 @@ export default function DashboardPage() {
     } else {
       const { data } = await supabase
         .from("enrollments")
-        .select("*, courses(id, title, description, join_code)")
+        .select("*, courses(id, title, description, join_code, professor_id)")
         .eq("student_id", user.id);
-      setEnrollments(data || []);
+
+      // Fetch professor info for each course
+      const enrollmentsWithProfessors = await Promise.all(
+        (data || []).map(async (enrollment: any) => {
+          const professorId = enrollment.courses?.professor_id;
+          if (professorId) {
+            // Try to get from users table first
+            const { data: prof } = await supabase
+              .from('users')
+              .select('full_name, avatar_url')
+              .eq('id', professorId)
+              .maybeSingle();
+
+            // If users table has data, use it; otherwise just store the ID
+            if (prof) {
+              return {
+                ...enrollment,
+                professor: {
+                  full_name: prof.full_name || 'Professor',
+                  avatar_url: prof.avatar_url
+                }
+              };
+            }
+            // Fallback: just show "Instructor" with the ID
+            return {
+              ...enrollment,
+              professor: { full_name: 'Instructor', avatar_url: null }
+            };
+          }
+          return { ...enrollment, professor: null };
+        })
+      );
+      setEnrollments(enrollmentsWithProfessors);
     }
 
     setLoading(false);
@@ -137,7 +169,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchData();
-  }, [router, supabase, refreshTrigger]);
+    // Keep array size consistent - refreshTrigger triggers re-fetch
+  }, [null, null, refreshTrigger]);
 
   // Real-time updates: subscribe to course/enrollment inserts so lists update instantly.
   useEffect(() => {
@@ -909,10 +942,9 @@ function StudentDashboard({ userId, enrollments, onRefresh }: { userId: string; 
       if (formRef.current) {
         formRef.current.reset();
       }
-      // Wait for database to commit and for next query to see the data
-      await new Promise(resolve => setTimeout(resolve, 500));
       setLoading(false);
       setError(null);
+      // Immediately refresh to show new enrollment
       onRefresh();
     }
   };
@@ -1089,6 +1121,29 @@ function StudentDashboard({ userId, enrollments, onRefresh }: { userId: string; 
                 <p className="text-slate-600 text-sm mb-2">
                   {(enrollment.courses as any)?.description}
                 </p>
+
+                {/* Faculty Info */}
+                {(enrollment as any).professor && (
+                  <div className="flex items-center gap-2 mb-3 p-2 bg-indigo-50 rounded-lg border border-indigo-100">
+                    {(enrollment as any).professor.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={(enrollment as any).professor.avatar_url}
+                        alt="Faculty"
+                        className="h-8 w-8 rounded-full object-cover border border-indigo-200"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600 text-sm font-medium">
+                        👨‍🏫
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-indigo-600 font-medium">Instructor</p>
+                      <p className="text-sm text-slate-800">{(enrollment as any).professor.full_name || 'Unknown'}</p>
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-xs text-slate-400 mb-3">Enrollment ID: <span className="font-mono">{enrollment.id}</span></p>
 
                 {/* Quiz section */}

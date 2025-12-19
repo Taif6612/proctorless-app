@@ -41,11 +41,17 @@ export default function SessionControlPage() {
     const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
 
     // Config state for new session
+    const [examType, setExamType] = useState<'online' | 'in-class'>('in-class');
     const [rows, setRows] = useState(5);
     const [columns, setColumns] = useState(6);
     const [durationMinutes, setDurationMinutes] = useState(30);
+    const [bufferMinutes, setBufferMinutes] = useState(5);
     const [lateJoinerExtraMinutes, setLateJoinerExtraMinutes] = useState(5);
     const [totalVariants, setTotalVariants] = useState(4);
+
+    // Generated variants info from storage
+    const [generatedVariantsCount, setGeneratedVariantsCount] = useState(0);
+    const [variantSetsLoaded, setVariantSetsLoaded] = useState(false);
 
     // Timer state
     const [timeRemaining, setTimeRemaining] = useState(0);
@@ -86,6 +92,25 @@ export default function SessionControlPage() {
                 .order('joined_at', { ascending: true });
 
             if (participantsData) setParticipants(participantsData as Participant[]);
+        }
+
+        // Fetch generated variants from storage
+        try {
+            const { data: vfile } = await supabase.storage.from('question_banks').download(`variations/${quizId}.json`);
+            if (vfile) {
+                const vtext = await vfile.text();
+                const vobj = JSON.parse(vtext || '{}');
+                const sets = Array.isArray(vobj?.sets) ? vobj.sets : [];
+                setGeneratedVariantsCount(sets.length);
+                setVariantSetsLoaded(true);
+                // Auto-set totalVariants to match generated if available
+                if (sets.length > 0) {
+                    setTotalVariants(sets.length);
+                }
+            }
+        } catch {
+            // No variations file yet
+            setVariantSetsLoaded(true);
         }
 
         setLoading(false);
@@ -138,16 +163,20 @@ export default function SessionControlPage() {
 
     // Create new session
     const createSession = async () => {
+        // For online exams, set rows/columns to 0 (no seating)
+        const sessionRows = examType === 'online' ? 0 : rows;
+        const sessionColumns = examType === 'online' ? 0 : columns;
+
         const { data, error } = await supabase
             .from('quiz_sessions')
             .insert({
                 quiz_id: quizId,
-                rows,
-                columns,
+                rows: sessionRows,
+                columns: sessionColumns,
                 duration_minutes: durationMinutes,
                 late_joiner_extra_minutes: lateJoinerExtraMinutes,
                 total_variants: totalVariants,
-                status: 'waiting'
+                status: examType === 'online' ? 'live' : 'waiting'  // Online exams start live immediately
             })
             .select()
             .single();
@@ -289,6 +318,12 @@ export default function SessionControlPage() {
                             Open Live Dashboard
                         </button>
                         <button
+                            onClick={() => router.push('/dashboard')}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
+                        >
+                            Go to Dashboard
+                        </button>
+                        <button
                             onClick={() => router.back()}
                             className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition"
                         >
@@ -336,68 +371,168 @@ export default function SessionControlPage() {
 
                 {/* No Session - Create Form */}
                 {!session && (
-                    <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-lg border border-white/20 max-w-xl">
+                    <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-lg border border-white/20 max-w-2xl">
                         <h2 className="text-xl font-bold text-slate-800 mb-6">Create Quiz Session</h2>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Rows</label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    max={20}
-                                    value={rows}
-                                    onChange={(e) => setRows(parseInt(e.target.value) || 1)}
-                                    className="w-full px-3 py-2 border rounded-lg text-slate-800"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Columns</label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    max={20}
-                                    value={columns}
-                                    onChange={(e) => setColumns(parseInt(e.target.value) || 1)}
-                                    className="w-full px-3 py-2 border rounded-lg text-slate-800"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Duration (minutes)</label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={durationMinutes}
-                                    onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 30)}
-                                    className="w-full px-3 py-2 border rounded-lg text-slate-800"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Late Joiner Extra (min)</label>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    value={lateJoinerExtraMinutes}
-                                    onChange={(e) => setLateJoinerExtraMinutes(parseInt(e.target.value) || 0)}
-                                    className="w-full px-3 py-2 border rounded-lg text-slate-800"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Question Variants</label>
-                                <input
-                                    type="number"
-                                    min={2}
-                                    max={26}
-                                    value={totalVariants}
-                                    onChange={(e) => setTotalVariants(parseInt(e.target.value) || 4)}
-                                    className="w-full px-3 py-2 border rounded-lg text-slate-800"
-                                />
+
+                        {/* Step 1: Exam Type */}
+                        <div className="mb-6 p-4 bg-indigo-50 rounded-xl">
+                            <h3 className="text-sm font-semibold text-indigo-800 mb-3">Step 1: Exam Type</h3>
+                            <div className="flex gap-4">
+                                <label className={`flex-1 p-4 rounded-xl cursor-pointer border-2 transition ${examType === 'online'
+                                    ? 'bg-indigo-100 border-indigo-500 text-indigo-800'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
+                                    }`}>
+                                    <input
+                                        type="radio"
+                                        name="examType"
+                                        value="online"
+                                        checked={examType === 'online'}
+                                        onChange={() => setExamType('online')}
+                                        className="sr-only"
+                                    />
+                                    <div className="text-center">
+                                        <span className="text-2xl">🌐</span>
+                                        <p className="font-semibold mt-1">Online Exam</p>
+                                        <p className="text-xs text-slate-500 mt-1">No seating required, random variants</p>
+                                    </div>
+                                </label>
+                                <label className={`flex-1 p-4 rounded-xl cursor-pointer border-2 transition ${examType === 'in-class'
+                                    ? 'bg-indigo-100 border-indigo-500 text-indigo-800'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
+                                    }`}>
+                                    <input
+                                        type="radio"
+                                        name="examType"
+                                        value="in-class"
+                                        checked={examType === 'in-class'}
+                                        onChange={() => setExamType('in-class')}
+                                        className="sr-only"
+                                    />
+                                    <div className="text-center">
+                                        <span className="text-2xl">🏫</span>
+                                        <p className="font-semibold mt-1">In-Class Exam</p>
+                                        <p className="text-xs text-slate-500 mt-1">Seating grid for adjacency-based variants</p>
+                                    </div>
+                                </label>
                             </div>
                         </div>
+
+                        {/* Step 2: Timer Settings */}
+                        <div className="mb-6 p-4 bg-emerald-50 rounded-xl">
+                            <h3 className="text-sm font-semibold text-emerald-800 mb-3">Step 2: Timer Settings</h3>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Duration (min)</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={durationMinutes}
+                                        onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 30)}
+                                        className="w-full px-3 py-2 border rounded-lg text-slate-800"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Buffer (min)</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        value={bufferMinutes}
+                                        onChange={(e) => setBufferMinutes(parseInt(e.target.value) || 0)}
+                                        className="w-full px-3 py-2 border rounded-lg text-slate-800"
+                                    />
+                                    <p className="text-xs text-slate-500 mt-1">Start delay</p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Late Joiner Extra</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        value={lateJoinerExtraMinutes}
+                                        onChange={(e) => setLateJoinerExtraMinutes(parseInt(e.target.value) || 0)}
+                                        className="w-full px-3 py-2 border rounded-lg text-slate-800"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Step 3: Question Variants */}
+                        <div className="mb-6 p-4 bg-purple-50 rounded-xl">
+                            <h3 className="text-sm font-semibold text-purple-800 mb-3">Step 3: Question Variants</h3>
+                            <div className="flex items-center gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Number of Variants (A-Z)</label>
+                                    <input
+                                        type="number"
+                                        min={2}
+                                        max={26}
+                                        value={totalVariants}
+                                        onChange={(e) => setTotalVariants(parseInt(e.target.value) || 4)}
+                                        className="w-24 px-3 py-2 border rounded-lg text-slate-800"
+                                    />
+                                </div>
+                                <div className="flex gap-1">
+                                    {Array.from({ length: Math.min(totalVariants, 10) }).map((_, i) => (
+                                        <span key={i} className="w-8 h-8 bg-purple-200 text-purple-700 rounded flex items-center justify-center text-sm font-bold">
+                                            {'ABCDEFGHIJ'[i]}
+                                        </span>
+                                    ))}
+                                    {totalVariants > 10 && <span className="text-slate-500">...</span>}
+                                </div>
+                            </div>
+                            {/* Generated variants info */}
+                            {variantSetsLoaded && (
+                                <div className={`mt-3 p-3 rounded-lg ${generatedVariantsCount > 0 ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+                                    {generatedVariantsCount > 0 ? (
+                                        <p className="text-sm text-green-700">
+                                            ✅ <strong>{generatedVariantsCount} question set(s)</strong> generated in Add Questions.
+                                            These will be automatically used for variant distribution.
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm text-yellow-700">
+                                            ⚠️ No question variants generated yet. Go to <strong>Add Questions</strong> to generate variant sets.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Step 4: Seating Grid (In-Class only) */}
+                        {examType === 'in-class' && (
+                            <div className="mb-6 p-4 bg-amber-50 rounded-xl">
+                                <h3 className="text-sm font-semibold text-amber-800 mb-3">Step 4: Classroom Seating Grid</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Rows</label>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={20}
+                                            value={rows}
+                                            onChange={(e) => setRows(parseInt(e.target.value) || 1)}
+                                            className="w-full px-3 py-2 border rounded-lg text-slate-800"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Columns</label>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={20}
+                                            value={columns}
+                                            onChange={(e) => setColumns(parseInt(e.target.value) || 1)}
+                                            className="w-full px-3 py-2 border rounded-lg text-slate-800"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-slate-600 mt-2">Total seats: {rows * columns} | Variants distributed based on adjacency</p>
+                            </div>
+                        )}
+
                         <button
                             onClick={createSession}
                             className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 transition shadow-lg"
                         >
-                            Create Session
+                            {examType === 'online' ? '🚀 Start Online Exam' : '📋 Create In-Class Session'}
                         </button>
                     </div>
                 )}

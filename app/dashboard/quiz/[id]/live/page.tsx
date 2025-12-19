@@ -37,6 +37,8 @@ export default function LiveDashboardPage() {
     const [session, setSession] = useState<Session | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
     const [timeRemaining, setTimeRemaining] = useState(0);
+    const [bufferRemaining, setBufferRemaining] = useState(0);
+    const [submissions, setSubmissions] = useState<any[]>([]);
 
     // Check authorization
     useEffect(() => {
@@ -101,6 +103,13 @@ export default function LiveDashboardPage() {
             if (participantsData) setParticipants(participantsData as Participant[]);
         }
 
+        // Fetch submissions for this quiz to track who has completed
+        const { data: submissionsData } = await supabase
+            .from('submissions')
+            .select('id, student_id, submitted_at')
+            .eq('quiz_id', quizId);
+        if (submissionsData) setSubmissions(submissionsData);
+
         setLoading(false);
     }, [quizId, supabase, authorized]);
 
@@ -110,40 +119,66 @@ export default function LiveDashboardPage() {
 
     // Real-time subscription
     useEffect(() => {
-        if (!session?.id) return;
+        const sessionId = session?.id;
+        if (!sessionId || !quizId) return;
 
         const channel = supabase
-            .channel(`live-${session.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'session_participants', filter: `session_id=eq.${session.id}` }, () => fetchData())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'quiz_sessions', filter: `id=eq.${session.id}` }, () => fetchData())
+            .channel(`live-${sessionId}-${quizId}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'session_participants', filter: `session_id=eq.${sessionId}` }, () => fetchData())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'quiz_sessions', filter: `id=eq.${sessionId}` }, () => fetchData())
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'submissions', filter: `quiz_id=eq.${quizId}` }, () => fetchData())
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'submissions', filter: `quiz_id=eq.${quizId}` }, () => fetchData())
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, [session?.id, supabase, fetchData]);
+    }, [session, quizId, supabase, fetchData]);
 
-    // Timer
+    // Timer with buffer support
     useEffect(() => {
         if (!session?.start_time || session.status !== 'live') return;
 
         const interval = setInterval(() => {
             const start = new Date(session.start_time!);
-            const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
             const now = new Date();
-            const remaining = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
+            const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
+
+            // Buffer is first 5 minutes (could be made configurable)
+            const bufferSec = 5 * 60; // 5 minutes buffer
+            const bufRem = Math.max(0, bufferSec - elapsed);
+            setBufferRemaining(bufRem);
+
+            // Quiz time starts after buffer
+            const quizElapsed = Math.max(0, elapsed - bufferSec);
+            const durationSec = session.duration_minutes * 60;
+            const remaining = Math.max(0, durationSec - quizElapsed);
             setTimeRemaining(remaining);
         }, 1000);
 
         return () => clearInterval(interval);
     }, [session?.start_time, session?.duration_minutes, session?.status]);
 
-    // Get participant at seat
+    // Get participant at seat with submission status
     const getParticipantAtSeat = (row: number, col: number) => {
-        return participants.find(p => p.seat_row === row && p.seat_column === col);
+        const participant = participants.find(p => p.seat_row === row && p.seat_column === col);
+        if (participant) {
+            // Check if this student has submitted
+            const submission = submissions.find(s => s.student_id === (participant as any).student_id);
+            if (submission?.submitted_at) {
+                return { ...participant, status: 'submitted' };
+            }
+        }
+        return participant;
     };
 
+    // Calculate counts with submission status
     const seatedCount = participants.filter(p => p.seat_row !== null).length;
-    const takingCount = participants.filter(p => p.status === 'taking').length;
-    const submittedCount = participants.filter(p => p.status === 'submitted').length;
+    const submittedCount = submissions.filter(s => s.submitted_at).length;
+    // Taking Quiz = seated participants who haven't submitted yet
+    const takingCount = participants.filter(p => {
+        if (p.seat_row === null) return false; // Not seated
+        const sub = submissions.find(s => s.student_id === (p as any).student_id);
+        return !sub?.submitted_at; // Hasn't submitted
+    }).length;
     const waitingCount = participants.filter(p => p.status === 'waiting').length;
 
     if (loading || !authorized) {
@@ -189,15 +224,27 @@ export default function LiveDashboardPage() {
                 </div>
             </div>
 
-            {/* Giant Timer */}
+            {/* Giant Timer with Buffer */}
             {session.status === 'live' && (
                 <div className="text-center mb-12">
-                    <div className={`text-8xl md:text-9xl font-mono font-bold ${timeRemaining <= 300 ? 'text-red-500 animate-pulse' :
-                        timeRemaining <= 600 ? 'text-yellow-500' : 'text-green-400'
-                        }`}>
-                        {formatTime(timeRemaining)}
-                    </div>
-                    <p className="text-slate-400 mt-2">Time Remaining</p>
+                    {bufferRemaining > 0 ? (
+                        <>
+                            <p className="text-slate-400 mb-2">Buffer Time (Students Preparing)</p>
+                            <div className="text-8xl md:text-9xl font-mono font-bold text-amber-400 animate-pulse">
+                                {formatTime(bufferRemaining)}
+                            </div>
+                            <p className="text-slate-500 mt-2">Quiz starts when buffer ends</p>
+                        </>
+                    ) : (
+                        <>
+                            <div className={`text-8xl md:text-9xl font-mono font-bold ${timeRemaining <= 300 ? 'text-red-500 animate-pulse' :
+                                timeRemaining <= 600 ? 'text-yellow-500' : 'text-green-400'
+                                }`}>
+                                {formatTime(timeRemaining)}
+                            </div>
+                            <p className="text-slate-400 mt-2">Quiz Time Remaining</p>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -245,7 +292,11 @@ export default function LiveDashboardPage() {
                                                 : 'bg-slate-700/50 text-slate-500'
                                                 }`}
                                         >
-                                            <span className="text-lg">{variantLabel}</span>
+                                            {participant?.status === 'submitted' ? (
+                                                <span className="text-2xl">✓</span>
+                                            ) : (
+                                                <span className="text-lg">{variantLabel}</span>
+                                            )}
                                             {participant && (
                                                 <span className="text-[10px] opacity-75 truncate max-w-full px-1">
                                                     {participant.student_email?.split('@')[0] || ''}

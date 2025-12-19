@@ -27,6 +27,9 @@ export default function QuizEditPage() {
   const [generatedCount, setGeneratedCount] = useState<number>(0);
   const [groupSets, setGroupSets] = useState<Array<{ name: string; questions: any[] }>>([]);
   const [activeSetIndex, setActiveSetIndex] = useState<number>(0);
+  // Multi-file upload state
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; fileName: string } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -43,7 +46,7 @@ export default function QuizEditPage() {
             const qs = Array.isArray(parsed?.questions) ? parsed.questions : (Array.isArray(parsed) ? parsed : []);
             setQuestions(normalizeQuestions(qs));
           }
-        } catch {}
+        } catch { }
       }
       try {
         const { data: sfile } = await supabase.storage.from('question_banks').download(`settings/${quizId}.json`);
@@ -57,7 +60,7 @@ export default function QuizEditPage() {
             original_probability: typeof sobj.original_probability === 'number' ? sobj.original_probability : 0.2,
           });
         }
-      } catch {}
+      } catch { }
       try {
         const { data: vfile } = await supabase.storage.from('question_banks').download(`variations/${quizId}.json`);
         if (vfile) {
@@ -71,7 +74,7 @@ export default function QuizEditPage() {
             if (mapped[0]?.questions) setQuestions(mapped[0].questions);
           }
         }
-      } catch {}
+      } catch { }
     };
     load();
   }, [quizId, supabase, router]);
@@ -141,33 +144,12 @@ export default function QuizEditPage() {
           <h1 className="text-2xl font-bold text-slate-900">Edit Quiz</h1>
           <div className="flex gap-2">
             <button onClick={() => router.push('/dashboard')} className="px-3 py-2 bg-slate-500 text-white rounded">Return to Dashboard</button>
-            <button onClick={() => router.push(`/dashboard/quiz/${quizId}`)} className="px-3 py-2 bg-slate-600 text-white rounded">Open Quiz</button>
+            <button onClick={() => router.push(`/dashboard/quiz/${quizId}/session`)} className="px-3 py-2 bg-purple-600 text-white rounded">Session Control</button>
             <button onClick={saveAll} disabled={saving} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
           </div>
         </div>
 
-        {/* Settings */}
-        <div className="bg-white rounded border p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4 text-black">Timer Settings</h2>
-          <label className="flex items-center gap-2 mb-3 text-sm text-black">
-            <input type="checkbox" checked={settings.timer_enabled} onChange={(e) => setSettings({ ...settings, timer_enabled: e.target.checked })} />
-            <span>Enable Timer</span>
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs text-slate-600 mb-1">Buffer (minutes)</label>
-              <input type="number" min={0} value={settings.buffer_minutes} onChange={(e) => setSettings({ ...settings, buffer_minutes: Number(e.target.value) })} className="w-full px-3 py-2 border rounded" />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-600 mb-1">Duration (minutes)</label>
-              <input type="number" min={1} value={settings.duration_minutes} onChange={(e) => setSettings({ ...settings, duration_minutes: Number(e.target.value) })} className="w-full px-3 py-2 border rounded" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <label className="block text-xs text-slate-600 mb-1">Probability to include original question (0–1)</label>
-            <input type="number" min={0} max={1} step={0.05} value={settings.original_probability} onChange={(e) => setSettings({ ...settings, original_probability: Math.max(0, Math.min(1, Number(e.target.value))) })} className="w-40 px-3 py-2 border rounded" />
-          </div>
-        </div>
+        {/* Note: Timer settings have been moved to Session Control */}
 
         {/* Questions */}
         <div className="bg-white rounded border p-6">
@@ -176,95 +158,160 @@ export default function QuizEditPage() {
             <button onClick={() => setQuestions((prev) => [...prev, { prompt: 'New question', type: 'text' }])} className="px-3 py-2 bg-green-600 text-white rounded">Add Question</button>
           </div>
 
-          <div className="mb-4 p-4 bg-slate-50 border rounded">
-            <p className="text-sm font-semibold text-black mb-2">Upload & Parse with Gemini</p>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const fileInput = (e.currentTarget as HTMLFormElement).querySelector('input[name="question_asset"]') as HTMLInputElement;
-                const f = fileInput?.files?.[0] || null;
-                if (!f) { alert('Select a file'); return; }
+          <div className="mb-4 p-4 bg-slate-50 border rounded-lg">
+            <p className="text-sm font-semibold text-slate-800 mb-3">Upload Question Sources (Multiple Files Supported)</p>
+
+            {/* File Input */}
+            <div className="flex items-center gap-3 mb-3">
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  setStagedFiles(prev => [...prev, ...files]);
+                  e.target.value = '';
+                }}
+                className="text-sm text-slate-700"
+              />
+              {stagedFiles.length > 0 && (
+                <button
+                  onClick={() => setStagedFiles([])}
+                  className="text-xs text-red-600 hover:text-red-800"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+
+            {/* Staged Files List */}
+            {stagedFiles.length > 0 && (
+              <div className="mb-3 bg-white rounded-lg p-3 border">
+                <p className="text-xs text-slate-600 mb-2">{stagedFiles.length} file(s) staged</p>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {stagedFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-slate-50 p-2 rounded border text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-indigo-600">{file.type.startsWith('image/') ? '🖼️' : '📄'}</span>
+                        <span className="text-slate-700 truncate max-w-[200px]">{file.name}</span>
+                        <span className="text-xs text-slate-400">({(file.size / 1024).toFixed(1)} KB)</span>
+                      </div>
+                      <button
+                        onClick={() => setStagedFiles(prev => prev.filter((_, i) => i !== idx))}
+                        className="text-red-500 hover:text-red-700 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Progress Bar */}
+            {uploadProgress && (
+              <div className="mb-3">
+                <div className="flex justify-between text-xs text-slate-600 mb-1">
+                  <span>Processing: {uploadProgress.fileName}</span>
+                  <span>{uploadProgress.current}/{uploadProgress.total}</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div
+                    className="bg-purple-600 h-2 rounded-full transition-all"
+                    style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Upload & Parse Button */}
+            <button
+              onClick={async () => {
+                if (stagedFiles.length === 0) { alert('Select at least one file'); return; }
                 setParsing(true);
+                const allQuestions: any[] = [];
+
                 try {
-                  const path = `quiz_assets/${quizId}/${Date.now()}_${f.name}`;
-                  const { error: upErr } = await supabase.storage.from('question_assets').upload(path, f, { upsert: true });
-                  if (upErr) { alert('Upload error: ' + upErr.message); setParsing(false); return; }
-                  const { data: pub } = await supabase.storage.from('question_assets').getPublicUrl(path);
-                  setUploadedAssetUrl(pub.publicUrl);
-                  const resp = await fetch('/api/gemini/extract', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fileUrl: pub.publicUrl, contentType: f.type })
-                  });
-                const data = await resp.json().catch(() => ({ ok: false, error: 'Unknown parse error' }));
-                if (resp.ok && (data as any)?.ok) {
-                  const parsed = normalizeQuestions(((data as any)?.questions) || []);
-                  setParsedQuestions(parsed);
-                  setGroupSets([{ name: 'Original', questions: parsed }]);
+                  for (let i = 0; i < stagedFiles.length; i++) {
+                    const file = stagedFiles[i];
+                    setUploadProgress({ current: i + 1, total: stagedFiles.length, fileName: file.name });
+
+                    const path = `quiz_assets/${quizId}/${Date.now()}_${file.name}`;
+                    const { error: upErr } = await supabase.storage.from('question_assets').upload(path, file, { upsert: true });
+                    if (upErr) {
+                      console.error('Upload error:', upErr.message);
+                      continue;
+                    }
+                    const { data: pub } = await supabase.storage.from('question_assets').getPublicUrl(path);
+                    setUploadedAssetUrl(pub.publicUrl);
+
+                    const resp = await fetch('/api/gemini/extract', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ fileUrl: pub.publicUrl, contentType: file.type })
+                    });
+                    const data = await resp.json().catch(() => ({ ok: false }));
+                    if (resp.ok && data.ok) {
+                      const qs = normalizeQuestions(data.questions || []).map((q: any, idx: number) => ({
+                        ...q,
+                        order_index: allQuestions.length + idx + 1
+                      }));
+                      allQuestions.push(...qs);
+                    }
+                  }
+
+                  setParsedQuestions(allQuestions);
+                  setQuestions(allQuestions);
+                  setGroupSets([{ name: 'Original', questions: allQuestions }]);
                   setActiveSetIndex(0);
-                  setQuestions(parsed);
-                  try {
+                  setStagedFiles([]);
+
+                  // Auto-generate variations if variantCount > 0
+                  if (variantCount > 0 && allQuestions.length > 0) {
                     setGenerating(true);
-                    let totalVars = 0;
-                    if (variantCount > 0 && parsed.length > 0) {
-                      const fullText = serializeQuestionsToText(parsed);
+                    try {
+                      const fullText = serializeQuestionsToText(allQuestions);
                       const vresp = await fetch('/api/gemini/variations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ master: fullText, count: variantCount, mode: 'set' }) });
-                      const vdata = await vresp.json().catch(()=>({ ok:false }));
-                      if (vresp.ok && (vdata as any)?.ok) {
-                        const texts = Array.isArray((vdata as any)?.set_texts) ? (vdata as any).set_texts : [];
+                      const vdata = await vresp.json().catch(() => ({ ok: false }));
+                      if (vresp.ok && vdata.ok) {
+                        const texts = Array.isArray(vdata.set_texts) ? vdata.set_texts : [];
                         const sets = texts.map((t: string, i: number) => ({ name: `Var Set ${i + 1}`, questions: normalizeQuestions(parseTextToQuestionsClient(t)) }));
-                        totalVars = sets.length;
-                        const allSets = [{ name: 'Original', questions: parsed }, ...sets];
+                        const allSets = [{ name: 'Original', questions: allQuestions }, ...sets];
                         setGroupSets(allSets);
-                        setActiveSetIndex(0);
+                        setGeneratedCount(sets.length);
                         try {
                           const payload = { sets: allSets.map((s) => ({ name: s.name, questions: s.questions })) };
                           const vblob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
                           await supabase.storage.from('question_banks').upload(`variations/${quizId}.json`, vblob, { upsert: true });
-                        } catch {}
+                        } catch { }
                       }
-                    } else {
-                      setGeneratedCount(0);
+                    } finally {
+                      setGenerating(false);
                     }
-                    setGeneratedCount(totalVars);
-                  } finally {
-                    setGenerating(false);
                   }
-                } else {
-                  const detailsRaw = (data as any)?.details;
-                  const fallbackRaw = (data as any)?.fallbackError;
-                  const details = typeof detailsRaw === 'string' ? detailsRaw : JSON.stringify(detailsRaw || {});
-                  const fb = typeof fallbackRaw === 'string' ? fallbackRaw : JSON.stringify(fallbackRaw || {});
-                  alert('Parse failed: ' + ((data as any)?.error || resp.status) + (details ? ('\nDetails: ' + details.substring(0, 400)) : '') + (fb ? ('\nFallback: ' + fb.substring(0, 400)) : ''));
-                }
                 } catch (err) {
-                  alert('Parse error');
+                  console.error('Error:', err);
+                  alert('Error processing files');
                 } finally {
                   setParsing(false);
+                  setUploadProgress(null);
                 }
               }}
-              className="flex items-center gap-3"
+              disabled={parsing || stagedFiles.length === 0}
+              className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:bg-purple-300 transition"
             >
-              <input name="question_asset" type="file" accept="image/*,application/pdf" className="flex-1 text-sm text-slate-900 file:bg-slate-700 file:text-white file:border-0 file:px-3 file:py-2 file:rounded" />
-              <button type="submit" disabled={parsing} className="px-3 py-2 bg-purple-600 text-white rounded disabled:opacity-50">
-                {parsing ? 'Parsing…' : 'Upload & Parse'}
-              </button>
-            </form>
+              {parsing ? 'Processing...' : `Upload & Parse ${stagedFiles.length > 0 ? `(${stagedFiles.length} files)` : ''}`}
+            </button>
 
             {uploadedAssetUrl && (
               <div className="mt-3 text-xs">
-                <a href={uploadedAssetUrl} target="_blank" className="underline text-blue-700">Open uploaded source</a>
+                <a href={uploadedAssetUrl} target="_blank" className="underline text-blue-700">Open last uploaded source</a>
               </div>
             )}
 
             {parsedQuestions.length > 0 && (
               <div className="mt-3">
-                <p className="text-sm text-black">Parsed questions: {parsedQuestions.length}</p>
-                <button
-                  onClick={() => setQuestions((prev) => normalizeQuestions([...(prev||[]), ...parsedQuestions]))}
-                  className="mt-2 px-3 py-1 bg-blue-600 text-white rounded"
-                >
-                  Add Parsed to Editor
-                </button>
+                <p className="text-sm text-slate-700">Parsed questions: {parsedQuestions.length}</p>
               </div>
             )}
           </div>
@@ -289,12 +336,12 @@ export default function QuizEditPage() {
               </div>
             )}
           </div>
-          
+
           <div className="mb-4 p-4 bg-slate-50 border rounded">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
               <div className="md:col-span-2">
                 <label className="block text-xs text-slate-600 mb-1">Variations to generate after parse (0–10)</label>
-                <input type="number" min={0} max={10} value={variantCount} onChange={(e)=>setVariantCount(parseInt(e.target.value||'3',10))} className="w-32 px-3 py-2 border rounded" />
+                <input type="number" min={0} max={10} value={variantCount} onChange={(e) => setVariantCount(parseInt(e.target.value || '3', 10))} className="w-32 px-3 py-2 border rounded" />
               </div>
               <div>
                 <button
@@ -304,7 +351,7 @@ export default function QuizEditPage() {
                       const baseQs = Array.isArray(groupSets[activeSetIndex]?.questions) && groupSets[activeSetIndex]?.questions.length > 0 ? groupSets[activeSetIndex].questions : questions;
                       const fullText = serializeQuestionsToText(baseQs);
                       const vresp = await fetch('/api/gemini/variations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ master: fullText, count: Math.max(0, variantCount), mode: 'set' }) });
-                      const vdata = await vresp.json().catch(()=>({ ok:false }));
+                      const vdata = await vresp.json().catch(() => ({ ok: false }));
                       if (vresp.ok && (vdata as any)?.ok) {
                         const texts = Array.isArray((vdata as any)?.set_texts) ? (vdata as any).set_texts : [];
                         const existingVarCount = Math.max(0, (groupSets.length || 0) - 1);
@@ -318,7 +365,7 @@ export default function QuizEditPage() {
                           const payload = { sets: allSets.map((s) => ({ name: s.name, questions: s.questions })) };
                           const vblob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
                           await supabase.storage.from('question_banks').upload(`variations/${quizId}.json`, vblob, { upsert: true });
-                        } catch {}
+                        } catch { }
                       } else {
                         const errText = typeof (vdata as any)?.error === 'string' ? (vdata as any).error : JSON.stringify((vdata as any)?.error || {});
                         const detailsText = typeof (vdata as any)?.details === 'string' ? (vdata as any).details : JSON.stringify((vdata as any)?.details || {});

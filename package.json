@@ -14,8 +14,10 @@
     "@radix-ui/react-slot": "^1.2.2",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
+    "@types/katex": "^0.16.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "katex": "^0.16.27",
     "localtunnel": "^2.0.2",
     "lucide-react": "^0.511.0",
     "next": "latest",
@@ -23,6 +25,7 @@
     "ngrok": "^5.0.0-beta.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-katex": "^3.1.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.0"
   },

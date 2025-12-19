@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { armExtension, disarmExtension, resetExtensionState } from '@/lib/extensionHelper';
+import MathText from '@/components/MathText';
 
 /**
  * Quiz Taker Page: app/dashboard/quiz/[id]/page.tsx
@@ -34,7 +35,7 @@ export default function QuizPage() {
   const [submission, setSubmission] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Integrity monitoring state
   const [integrityViolations, setIntegrityViolations] = useState<any[]>([]);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
@@ -85,33 +86,93 @@ export default function QuizPage() {
         setQuiz(quizData);
 
         // Fetch submission (should already exist from joinQuiz)
-        const { data: submissionData, error: submissionError } = await supabase
+        let { data: submissionData, error: submissionError } = await supabase
           .from('submissions')
           .select('*')
           .eq('quiz_id', quizId)
           .eq('student_id', user.id)
           .single();
 
+        // If no submission, check if student is session participant and create one
         if (submissionError || !submissionData) {
-          setError('Submission not found. Please go back and try again.');
-          setLoading(false);
-          return;
+          const { data: sessionData } = await supabase
+            .from('quiz_sessions')
+            .select('id, status')
+            .eq('quiz_id', quizId)
+            .in('status', ['waiting', 'seated', 'live'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (sessionData) {
+            const { data: participant } = await supabase
+              .from('session_participants')
+              .select('*')
+              .eq('session_id', sessionData.id)
+              .eq('student_id', user.id)
+              .single();
+
+            if (participant) {
+              const { data: newSub, error: createErr } = await supabase
+                .from('submissions')
+                .insert({ quiz_id: quizId, student_id: user.id, started_at: new Date().toISOString() })
+                .select()
+                .single();
+              if (createErr || !newSub) {
+                setError('Failed to create submission. Please try again.');
+                setLoading(false);
+                return;
+              }
+              submissionData = newSub;
+            } else {
+              setError('You are not registered for this session.');
+              setLoading(false);
+              return;
+            }
+          } else {
+            setError('Submission not found. Please go back and try again.');
+            setLoading(false);
+            return;
+          }
         }
 
         setSubmission(submissionData);
-        // Ensure started_at is set once per submission
-        let effectiveStartedAt = submissionData.started_at ? new Date(submissionData.started_at).toISOString() : undefined;
-        if (!effectiveStartedAt) {
-          const nowIso = new Date().toISOString();
-          const { data: updated } = await supabase
-            .from('submissions')
-            .update({ started_at: nowIso })
-            .eq('id', submissionData.id)
-            .select()
-            .single();
-          effectiveStartedAt = updated?.started_at || nowIso;
+
+        // Fetch session for synchronized timer with professor's view
+        const { data: liveSession } = await supabase
+          .from('quiz_sessions')
+          .select('*')
+          .eq('quiz_id', quizId)
+          .in('status', ['live', 'ended'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (liveSession?.start_time) {
+          // Use session start_time (same as professor sees)
+          setStartTs(new Date(liveSession.start_time).getTime());
+          // Use session settings for timer
+          setSettings(prev => ({
+            ...prev,
+            timer_enabled: true,
+            duration_minutes: liveSession.duration_minutes || prev.duration_minutes,
+            buffer_minutes: 5
+          }));
+        } else {
+          // Fallback: use submission started_at
+          let effectiveStartedAt = submissionData.started_at ? new Date(submissionData.started_at).toISOString() : undefined;
+          if (!effectiveStartedAt) {
+            const nowIso = new Date().toISOString();
+            const { data: updated } = await supabase
+              .from('submissions')
+              .update({ started_at: nowIso })
+              .eq('id', submissionData.id)
+              .select()
+              .single();
+            effectiveStartedAt = updated?.started_at || nowIso;
+          }
+          setStartTs(new Date(effectiveStartedAt).getTime());
         }
-        setStartTs(new Date(effectiveStartedAt).getTime());
         if (quizData.question_bank_path) {
           try {
             const { data: fileData, error: fileError } = await supabase.storage
@@ -134,7 +195,7 @@ export default function QuizPage() {
                     const vobj = JSON.parse(vtext || '{}');
                     variationGroups = Array.isArray(vobj?.groups) ? vobj.groups : [];
                   }
-                } catch {}
+                } catch { }
 
                 // Check already assigned variants for this submission
                 const { data: existing } = await supabase
@@ -181,9 +242,9 @@ export default function QuizPage() {
                   const mapped = (existing || []).sort((a: any, b: any) => a.question_index - b.question_index).map((r: any) => r.variant).filter(Boolean);
                   if (Array.isArray(mapped) && mapped.length === qs.length) setQuestions(mapped);
                 }
-              } catch {}
+              } catch { }
             }
-          } catch {}
+          } catch { }
         }
         // Load settings
         try {
@@ -201,7 +262,7 @@ export default function QuizPage() {
             };
             setSettings(st);
           }
-        } catch {}
+        } catch { }
         try {
           const { data: gfile } = await supabase.storage
             .from('question_banks')
@@ -217,13 +278,13 @@ export default function QuizPage() {
             });
             setGradePer(normalized);
           }
-        } catch {}
+        } catch { }
         try {
           window.postMessage({ type: 'PROCTORLESS_SUBMISSION_ID', submissionId: submissionData.id }, '*');
-        } catch {}
+        } catch { }
         try {
           await armExtension(submissionData.id);
-        } catch {}
+        } catch { }
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching quiz:', err);
@@ -245,7 +306,7 @@ export default function QuizPage() {
         const obj = JSON.parse(ls || '{}');
         if (obj && typeof obj === 'object') { setAnswers(obj); loaded = true; }
       }
-    } catch {}
+    } catch { }
     if (!loaded) {
       (async () => {
         try {
@@ -258,7 +319,7 @@ export default function QuizPage() {
             const a = pobj?.answers || {};
             if (a && typeof a === 'object') setAnswers(a);
           }
-        } catch {}
+        } catch { }
       })();
     }
   }, [submission, supabase]);
@@ -267,7 +328,7 @@ export default function QuizPage() {
   useEffect(() => {
     if (!submission) return;
     const key = `proctorless_answers_${submission.id}`;
-    try { localStorage.setItem(key, JSON.stringify(answers)); } catch {}
+    try { localStorage.setItem(key, JSON.stringify(answers)); } catch { }
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
       try {
@@ -276,7 +337,7 @@ export default function QuizPage() {
         await supabase.storage
           .from('question_banks')
           .upload(`drafts/${submission.id}.json`, blob, { upsert: true });
-      } catch {}
+      } catch { }
     }, 1500);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [answers, submission, supabase]);
@@ -402,7 +463,7 @@ export default function QuizPage() {
         // User switched away from tab
         console.log('🚨 Tab switch detected!');
         console.log('Current referrer:', document.referrer);
-        
+
         const newViolationCount = tabSwitchCount + 1;
         setTabSwitchCount(newViolationCount);
 
@@ -455,7 +516,7 @@ export default function QuizPage() {
       } else {
         // User returned to tab
         console.log('✅ User returned to quiz tab');
-        
+
         /**
          * Optional: When user returns, we could check if they were on an allowed site.
          * However, document.referrer at this point will be the quiz tab itself.
@@ -508,10 +569,10 @@ export default function QuizPage() {
       if (error) throw error;
       try {
         await disarmExtension();
-      } catch {}
+      } catch { }
       try {
         await resetExtensionState();
-      } catch {}
+      } catch { }
 
       alert('Quiz submitted successfully!');
       router.push('/dashboard');
@@ -555,11 +616,11 @@ export default function QuizPage() {
         <div className="fixed right-6 top-24 z-50">
           <div className="bg-white rounded-lg shadow border p-4 min-w-[180px] text-center">
             <p className="text-xs font-semibold text-slate-600">Buffer</p>
-            <p className="text-lg font-bold text-amber-600">{Math.floor(bufferRemaining/60)}:{String(bufferRemaining%60).padStart(2,'0')}</p>
+            <p className="text-lg font-bold text-amber-600">{Math.floor(bufferRemaining / 60)}:{String(bufferRemaining % 60).padStart(2, '0')}</p>
             {settings.timer_enabled && (
               <>
                 <p className="text-xs font-semibold text-slate-600 mt-2">Timer</p>
-                <p className={`text-lg font-bold ${quizRemaining>0? 'text-blue-600':'text-red-600'}`}>{Math.floor(quizRemaining/60)}:{String(quizRemaining%60).padStart(2,'0')}</p>
+                <p className={`text-lg font-bold ${quizRemaining > 0 ? 'text-blue-600' : 'text-red-600'}`}>{Math.floor(quizRemaining / 60)}:{String(quizRemaining % 60).padStart(2, '0')}</p>
               </>
             )}
           </div>
@@ -670,25 +731,25 @@ export default function QuizPage() {
                   const key = idx;
                   return (
                     <div key={key} className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                      <h3 className="font-semibold text-slate-900 mb-2">{prompt}</h3>
+                      <h3 className="font-semibold text-slate-900 mb-2"><MathText text={prompt} /></h3>
                       {typeof q?.max_marks === 'number' && (
                         <p className="text-xs text-slate-600 mb-2">Max Marks: <span className="font-mono">{q.max_marks}</span></p>
                       )}
                       {type === 'mcq' && choices.length > 0 ? (
                         <div className="space-y-2">
-                      {choices.map((c: string, ci: number) => (
-                        <label key={ci} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="radio"
-                            name={`q_${key}`}
-                            value={c}
-                            checked={(answers[key] || '') === c}
-                            onChange={(e) => handleAnswerChange(key, e.target.value)}
-                            disabled={bufferRemaining>0 || (settings.timer_enabled && quizRemaining===0)}
-                          />
-                          <span>{c}</span>
-                        </label>
-                      ))}
+                          {choices.map((c: string, ci: number) => (
+                            <label key={ci} className="flex items-center gap-2 text-sm">
+                              <input
+                                type="radio"
+                                name={`q_${key}`}
+                                value={c}
+                                checked={(answers[key] || '') === c}
+                                onChange={(e) => handleAnswerChange(key, e.target.value)}
+                                disabled={bufferRemaining > 0 || (settings.timer_enabled && quizRemaining === 0)}
+                              />
+                              <span><MathText text={c} /></span>
+                            </label>
+                          ))}
                         </div>
                       ) : type === 'boolean' ? (
                         <div className="space-y-2">
@@ -711,7 +772,7 @@ export default function QuizPage() {
                           value={answers[key] || ''}
                           onChange={(e) => handleAnswerChange(key, e.target.value)}
                           className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={bufferRemaining>0 || (settings.timer_enabled && quizRemaining===0)}
+                          disabled={bufferRemaining > 0 || (settings.timer_enabled && quizRemaining === 0)}
                         />
                       ) : (
                         <textarea
@@ -719,7 +780,7 @@ export default function QuizPage() {
                           onChange={(e) => handleAnswerChange(key, e.target.value)}
                           placeholder="Type your answer here..."
                           className="w-full h-24 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={bufferRemaining>0 || (settings.timer_enabled && quizRemaining===0)}
+                          disabled={bufferRemaining > 0 || (settings.timer_enabled && quizRemaining === 0)}
                         />
                       )}
                       {submission?.submitted_at && (() => {
@@ -740,7 +801,7 @@ export default function QuizPage() {
                                   return q.choices?.[ci];
                                 }
                                 if (type === 'boolean') {
-                                  if (typeof q?.correct_index === 'number') return ['True','False'][q.correct_index];
+                                  if (typeof q?.correct_index === 'number') return ['True', 'False'][q.correct_index];
                                   return q?.expected_answer as any;
                                 }
                                 if (type === 'numeric') return q?.expected_answer as any;

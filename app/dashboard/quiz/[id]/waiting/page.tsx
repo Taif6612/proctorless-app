@@ -79,19 +79,7 @@ export default function StudentWaitingRoomPage() {
 
             if (participationData) {
                 setMyParticipation(participationData as Participant);
-
-                // If quiz is live and student is seated, redirect to quiz
-                if (sessionData.status === 'live' && participationData.seat_row !== null) {
-                    if (participationData.status === 'seated' || participationData.status === 'ready') {
-                        // Update status to taking
-                        await supabase
-                            .from('session_participants')
-                            .update({ status: 'taking', started_at: new Date().toISOString() })
-                            .eq('id', participationData.id);
-                    }
-                    // Redirect to take quiz with variant info
-                    router.push(`/dashboard/quiz/${quizId}?variant=${participationData.variant_index}`);
-                }
+                // No auto-redirect - students should use the "Take Quiz" button on the quiz page
             }
         }
 
@@ -264,21 +252,26 @@ export default function StudentWaitingRoomPage() {
         );
     }
 
-    // Quiz is live but student hasn't started yet (shouldn't reach here normally due to auto-redirect)
+    // Quiz is live - show button to go to quiz page
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-100">
             <div className="text-center max-w-md bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-lg">
-                <div className="text-6xl mb-4">🚀</div>
-                <h1 className="text-2xl font-bold text-green-700 mb-2">Quiz has Started!</h1>
-                <p className="text-slate-600 mb-6">You'll be redirected to the quiz page automatically...</p>
-                <div className="text-4xl font-mono font-bold text-green-600 mb-4">
-                    {formatTime(timeRemaining)}
+                <div className="text-6xl mb-4">🎯</div>
+                <h1 className="text-2xl font-bold text-green-700 mb-2">Quiz is Live!</h1>
+                <div className="bg-green-50 rounded-xl p-4 mb-6">
+                    <p className="text-lg text-green-700 font-semibold">
+                        Your Seat: Row {(myParticipation.seat_row || 0) + 1}, Seat {(myParticipation.seat_column || 0) + 1}
+                    </p>
+                    <p className="text-sm text-green-600 mt-1">
+                        Question Set: <strong>{'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[myParticipation.variant_index || 0]}</strong>
+                    </p>
                 </div>
+                <p className="text-slate-600 mb-6">Click the button below to go to the quiz page and start your exam.</p>
                 <button
-                    onClick={() => router.push(`/dashboard/quiz/${quizId}?variant=${myParticipation.variant_index}`)}
+                    onClick={() => router.push(`/dashboard/quiz/${quizId}`)}
                     className="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition"
                 >
-                    Start Quiz Now
+                    Go to Quiz Page
                 </button>
             </div>
         </div>

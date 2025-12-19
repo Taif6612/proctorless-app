@@ -68,6 +68,17 @@ ProctorLess is a modern, privacy-respecting online assessment platform designed 
 | **System Overview** | View all courses, quizzes, and users |
 | **Integrity Logs** | Review tab-switch and activity logs |
 
+### 🆕 Recent Updates
+
+| Feature | Description |
+|---------|-------------|
+| **📐 LaTeX Math Support** | Mathematical expressions render beautifully with KaTeX |
+| **📄 PDF Question Parsing** | Upload PDFs directly and parse questions with Gemini AI |
+| **⚡ Real-Time Auth** | Navbar updates instantly on login/logout |
+| **👥 Role Selection** | Students/Teachers choose role during sign-up |
+| **🔄 Live Dashboard** | Real-time submission tracking with buffer timers |
+| **🎯 Session Timer Sync** | Student timers synchronized with professor's view |
+
 ### 🧩 Chrome Extension
 
 The **ProctorLess Integrity Monitor** is a lightweight Chrome extension that works alongside the web platform.
