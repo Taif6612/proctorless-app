@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 interface ProfileClientProps {
   user: {
     id: string;
-    email: string;
+    email?: string;
   };
   userRole: string;
 }
@@ -28,7 +28,7 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
   const [activeTab, setActiveTab] = useState('profile');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
-  
+
   const supabase = createClient();
   const router = useRouter();
 
@@ -44,7 +44,7 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
         .select('*')
         .eq('id', user?.id)
         .single();
-      
+
       if (profileError) {
         const { data: userResp } = await supabase.auth.getUser();
         const u = userResp?.user;
@@ -56,7 +56,7 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
         setAvatarPreview('');
         return;
       }
-      
+
       if (profile) {
         setProfileData({
           fullName: profile.full_name || '',
@@ -93,10 +93,10 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
     }
 
     setLoading(true);
-    
+
     try {
       let avatarUrl = avatarPreview;
-      
+
       if (avatarFile) {
         const fileExtension = avatarFile.name.split('.').pop();
         const fileName = `${user.id}/avatar-${Date.now()}.${fileExtension}`;
@@ -106,16 +106,16 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
             cacheControl: '3600',
             upsert: true
           });
-        
+
         if (uploadError) throw uploadError;
-        
+
         const { data: { publicUrl } } = supabase.storage
           .from('avatars')
           .getPublicUrl(fileName);
-        
+
         avatarUrl = publicUrl;
       }
-      
+
       const { error } = await supabase
         .from('users')
         .upsert({
@@ -126,11 +126,11 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
           avatar_url: avatarUrl,
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' });
-      
+
       if (error) throw error;
-      
+
       toast.success('Profile updated successfully!');
-      try { router.refresh(); } catch {}
+      try { router.refresh(); } catch { }
     } catch (error) {
       toast.error('Failed to update profile');
       console.error('Error updating profile:', error);
@@ -141,36 +141,36 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('New passwords do not match');
       return;
     }
-    
+
     if (passwordData.newPassword.length < 6) {
       toast.error('Password must be at least 6 characters long');
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
+        email: user.email || '',
         password: passwordData.currentPassword,
       });
-      
+
       if (signInError) {
         toast.error('Current password is incorrect');
         return;
       }
-      
+
       const { error: updateError } = await supabase.auth.updateUser({
         password: passwordData.newPassword
       });
-      
+
       if (updateError) throw updateError;
-      
+
       toast.success('Password updated successfully!');
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
@@ -215,30 +215,28 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
           Role: {userRole}
         </div>
       </div>
-      
+
       <div className="flex mb-8 bg-slate-100 rounded-xl p-1">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-            activeTab === 'profile'
-              ? 'bg-white text-blue-600 shadow-md'
-              : 'text-slate-600 hover:text-slate-800'
-          }`}
+          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${activeTab === 'profile'
+            ? 'bg-white text-blue-600 shadow-md'
+            : 'text-slate-600 hover:text-slate-800'
+            }`}
         >
           Profile
         </button>
         <button
           onClick={() => setActiveTab('password')}
-          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-            activeTab === 'password'
-              ? 'bg-white text-blue-600 shadow-md'
-              : 'text-slate-600 hover:text-slate-800'
-          }`}
+          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${activeTab === 'password'
+            ? 'bg-white text-blue-600 shadow-md'
+            : 'text-slate-600 hover:text-slate-800'
+            }`}
         >
           Password
         </button>
       </div>
-      
+
       {activeTab === 'profile' && (
         <form onSubmit={handleProfileUpdate} className="space-y-6">
           <div className="text-center">
@@ -260,15 +258,15 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
                 </svg>
               </div>
             </div>
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
               id="avatar-upload"
               onChange={handleAvatarChange}
             />
-            <label 
-              htmlFor="avatar-upload" 
+            <label
+              htmlFor="avatar-upload"
               className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl cursor-pointer"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -278,19 +276,19 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
               Change Photo
             </label>
           </div>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">Full Name</label>
-              <input 
+              <input
                 type="text"
                 value={profileData.fullName}
                 onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
-                placeholder="Enter your full name" 
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50" 
+                placeholder="Enter your full name"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50"
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">Department</label>
               <select
@@ -314,20 +312,20 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
                 />
               )}
             </div>
-            
+
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">Bio</label>
-              <textarea 
+              <textarea
                 value={profileData.bio}
                 onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                placeholder="Tell us about yourself..." 
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50 resize-none h-24" 
+                placeholder="Tell us about yourself..."
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50 resize-none h-24"
               />
             </div>
           </div>
-          
+
           <div className="flex gap-4 pt-4">
-            <button 
+            <button
               type="submit"
               disabled={loading}
               className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
@@ -340,49 +338,49 @@ export default function ProfileClient({ user, userRole }: ProfileClientProps) {
           </div>
         </form>
       )}
-      
+
       {activeTab === 'password' && (
         <form onSubmit={handlePasswordUpdate} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">Current Password</label>
-              <input 
+              <input
                 type="password"
                 value={passwordData.currentPassword}
                 onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                placeholder="Enter your current password" 
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50" 
+                placeholder="Enter your current password"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50"
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">New Password</label>
-              <input 
+              <input
                 type="password"
                 value={passwordData.newPassword}
                 onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                placeholder="Enter your new password" 
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50" 
+                placeholder="Enter your new password"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50"
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">Confirm New Password</label>
-              <input 
+              <input
                 type="password"
                 value={passwordData.confirmPassword}
                 onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                placeholder="Confirm your new password" 
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50" 
+                placeholder="Confirm your new password"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50/50"
                 required
               />
             </div>
           </div>
-          
+
           <div className="flex gap-4 pt-4">
-            <button 
+            <button
               type="submit"
               disabled={loading}
               className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"

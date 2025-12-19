@@ -84,8 +84,8 @@ async function callGeminiImage(b64: string, mimeType: string) {
           const response: any = await genai.models.generateContent({
             model,
             contents,
-            generationConfig: { temperature: 0.1, maxOutputTokens },
-          });
+            config: { temperature: 0.1, maxOutputTokens },
+          } as any);
           const text = response?.text || response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
           if (typeof text === "string" && text.length) {
             try {
@@ -116,8 +116,8 @@ async function callGeminiImage(b64: string, mimeType: string) {
               const response: any = await genai.models.generateContent({
                 model: 'gemini-1.5-pro',
                 contents,
-                generationConfig: { temperature: 0.1, maxOutputTokens },
-              });
+                config: { temperature: 0.1, maxOutputTokens },
+              } as any);
               const text = response?.text || response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
               if (typeof text === "string" && text.length) {
                 try {

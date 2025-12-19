@@ -425,7 +425,7 @@ export default function QuizEditPage() {
                 </div>
                 {(String(q.type).toLowerCase() === 'mcq' || String(q.type).toLowerCase() === 'boolean') && (
                   <div className="mt-3 space-y-2">
-                    {((String(q.type).toLowerCase() === 'boolean') ? ['True', 'False'] : (Array.isArray(q.choices) ? q.choices : ['Option A', 'Option B'])).map((c, ci) => (
+                    {((String(q.type).toLowerCase() === 'boolean') ? ['True', 'False'] : (Array.isArray(q.choices) ? q.choices : ['Option A', 'Option B'])).map((c: string, ci: number) => (
                       <div key={ci} className="flex items-center gap-2">
                         <span className="text-xs text-slate-600">Choice {ci + 1}</span>
                         <input value={c} onChange={(e) => {

@@ -171,7 +171,7 @@ export default function QuizPage() {
               .single();
             effectiveStartedAt = updated?.started_at || nowIso;
           }
-          setStartTs(new Date(effectiveStartedAt).getTime());
+          setStartTs(effectiveStartedAt ? new Date(effectiveStartedAt).getTime() : Date.now());
         }
         if (quizData.question_bank_path) {
           try {

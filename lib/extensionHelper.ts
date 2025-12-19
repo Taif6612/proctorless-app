@@ -5,6 +5,9 @@
  * to auto-arm/disarm the extension when the quiz starts/ends
  */
 
+// Declare chrome as a global for TypeScript
+declare const chrome: any;
+
 /**
  * Sends a message to the ProctorLess Focus extension
  * Call this when a quiz starts
@@ -14,7 +17,7 @@
  */
 export async function armExtension(submissionId: string): Promise<boolean> {
   if (typeof window === 'undefined') return false;
-  
+
   // Check if chrome is available (extension context)
   if (!('chrome' in window) || !((window as any).chrome?.runtime)) {
     console.warn('[Quiz] Chrome extension not available (not installed?)');
@@ -126,7 +129,7 @@ export async function getExtensionState(): Promise<{ armed: boolean; examToken: 
 // ============================================================================
 // EXAMPLE USAGE IN YOUR QUIZ COMPONENT
 // ============================================================================
-// 
+//
 // Copy this example into your quiz page component:
 // app/dashboard/quiz/[id]/page.tsx
 //
