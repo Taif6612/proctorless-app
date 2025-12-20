@@ -1021,6 +1021,27 @@ function StudentDashboard({ userId, enrollments, onRefresh }: { userId: string; 
 
   return (
     <div className="grid grid-cols-1 gap-8">
+      {/* Extension Download Banner */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg p-6 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chrome"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /><line x1="21.17" x2="12" y1="8" y2="8" /><line x1="3.95" x2="8.54" y1="6.06" y2="14.01" /><line x1="10.88" x2="15.46" y1="21.94" y2="14.01" /></svg>
+            <h2 className="text-xl font-bold">Install ProctorLess Extension</h2>
+          </div>
+          <p className="text-indigo-100 text-sm">Required for taking secure quizzes. Download and pin it to Chrome.</p>
+        </div>
+        <div className="flex gap-3">
+          <a
+            href="/proctorless-extension.zip"
+            download="proctorless-extension.zip"
+            className="px-6 py-2.5 bg-white text-indigo-600 font-bold rounded-lg shadow hover:bg-indigo-50 transition flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
+            Download Extension
+          </a>
+        </div>
+      </div>
+
 
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
         <h2 className="text-2xl font-bold text-slate-900 mb-6">Your Analytics</h2>
