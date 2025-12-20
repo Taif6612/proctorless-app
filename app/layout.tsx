@@ -5,6 +5,7 @@ import NavBar from "@/components/nav-bar";
 import { Toaster } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -49,6 +50,7 @@ export default function RootLayout({
             </div>
           </footer>
           <Toaster />
+          <SpeedInsights />
         </Providers>
       </body>
     </html>
