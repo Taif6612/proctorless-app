@@ -301,7 +301,7 @@ export default function AutoJoinQuizPage() {
                 setSession(updated as Session);
 
                 // Quiz started!
-                if (updated.status === 'live' && myParticipation?.seat_row !== null) {
+                if (updated.status === 'live' && myParticipation && myParticipation.seat_row !== null) {
                     await handleQuizStart(myParticipation, updated, user);
                 }
             })
@@ -362,7 +362,7 @@ export default function AutoJoinQuizPage() {
         );
     }
 
-    const variantLabel = myParticipation?.variant_index !== null
+    const variantLabel = myParticipation && myParticipation.variant_index !== null
         ? String.fromCharCode(65 + (myParticipation.variant_index || 0))
         : null;
 
@@ -381,7 +381,7 @@ export default function AutoJoinQuizPage() {
                 <p className="text-slate-600 mb-6">{statusMessage}</p>
 
                 {/* Seat Info (if seated) */}
-                {status === 'seated' && myParticipation?.seat_row !== null && (
+                {status === 'seated' && myParticipation && myParticipation.seat_row !== null && (
                     <div className="bg-indigo-50 rounded-xl p-4 mb-6">
                         <p className="text-lg text-indigo-700 font-semibold">
                             Row {(myParticipation.seat_row || 0) + 1}, Seat {(myParticipation.seat_column || 0) + 1}
@@ -440,6 +440,33 @@ export default function AutoJoinQuizPage() {
                 {session?.status === 'live' && (
                     <div className="text-4xl font-mono font-bold text-green-600 mb-4">
                         {formatTime(timeRemaining)}
+                    </div>
+                )}
+
+                {/* Extension Download Reminder (if not detected) */}
+                {!extensionAvailable && status !== 'error' && (
+                    <div className="mt-8 pt-6 border-t border-slate-200">
+                        <div className="flex items-center gap-3 mb-3 bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            </div>
+                            <div className="text-left">
+                                <p className="text-xs font-bold text-indigo-900 leading-tight">Missing Extension v1.1.0?</p>
+                                <p className="text-[10px] text-indigo-700">Better identification & security</p>
+                            </div>
+                            <a
+                                href="/extension/proctorless-focus-extension.zip"
+                                download
+                                className="ml-auto px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-bold text-[10px] shadow-sm whitespace-nowrap"
+                            >
+                                Download
+                            </a>
+                        </div>
+                        <p className="text-[10px] text-slate-500 italic">
+                            Required to automatically verify your lab machine position.
+                        </p>
                     </div>
                 )}
             </div>

@@ -1000,8 +1000,8 @@ function StudentDashboard({ userId, enrollments, onRefresh }: { userId: string; 
               </svg>
             </div>
             <div>
-              <p className="text-sm font-semibold text-indigo-900">ProctorLess Focus Extension</p>
-              <p className="text-xs text-indigo-700">Required for taking quizzes with integrity monitoring</p>
+              <p className="text-sm font-semibold text-indigo-900">ProctorLess Focus Extension v1.1.0</p>
+              <p className="text-xs text-indigo-700">Required for machine identifying and integrity monitoring</p>
             </div>
           </div>
           <a
