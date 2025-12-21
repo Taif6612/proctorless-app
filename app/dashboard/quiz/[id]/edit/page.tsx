@@ -27,6 +27,9 @@ export default function QuizEditPage() {
   const [generatedCount, setGeneratedCount] = useState<number>(0);
   const [groupSets, setGroupSets] = useState<Array<{ name: string; questions: any[] }>>([]);
   const [activeSetIndex, setActiveSetIndex] = useState<number>(0);
+  const [quizMode, setQuizMode] = useState<'online' | 'physical'>('online');
+  const [seatingRows, setSeatingRows] = useState<number>(5);
+  const [seatingColumns, setSeatingColumns] = useState<number>(6);
 
   useEffect(() => {
     const load = async () => {
@@ -43,7 +46,7 @@ export default function QuizEditPage() {
             const qs = Array.isArray(parsed?.questions) ? parsed.questions : (Array.isArray(parsed) ? parsed : []);
             setQuestions(normalizeQuestions(qs));
           }
-        } catch {}
+        } catch { }
       }
       try {
         const { data: sfile } = await supabase.storage.from('question_banks').download(`settings/${quizId}.json`);
@@ -56,8 +59,12 @@ export default function QuizEditPage() {
             buffer_minutes: Number(sobj.buffer_minutes || 5),
             original_probability: typeof sobj.original_probability === 'number' ? sobj.original_probability : 0.2,
           });
+          // Load quiz mode and seating settings
+          if (sobj.quiz_mode) setQuizMode(sobj.quiz_mode);
+          if (sobj.seating_rows) setSeatingRows(Number(sobj.seating_rows));
+          if (sobj.seating_columns) setSeatingColumns(Number(sobj.seating_columns));
         }
-      } catch {}
+      } catch { }
       try {
         const { data: vfile } = await supabase.storage.from('question_banks').download(`variations/${quizId}.json`);
         if (vfile) {
@@ -71,7 +78,7 @@ export default function QuizEditPage() {
             if (mapped[0]?.questions) setQuestions(mapped[0].questions);
           }
         }
-      } catch {}
+      } catch { }
     };
     load();
   }, [quizId, supabase, router]);
@@ -124,7 +131,12 @@ export default function QuizEditPage() {
         await supabase.from('quizzes').update({ question_bank_path: path }).eq('id', quizId);
       }
 
-      const sblob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+      const sblob = new Blob([JSON.stringify({
+        ...settings,
+        quiz_mode: quizMode,
+        seating_rows: seatingRows,
+        seating_columns: seatingColumns,
+      }, null, 2)], { type: 'application/json' });
       await supabase.storage.from('question_banks').upload(`settings/${quizId}.json`, sblob, { upsert: true });
       alert('Saved');
     } catch (e) {
@@ -144,6 +156,84 @@ export default function QuizEditPage() {
             <button onClick={() => router.push(`/dashboard/quiz/${quizId}`)} className="px-3 py-2 bg-slate-600 text-white rounded">Open Quiz</button>
             <button onClick={saveAll} disabled={saving} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
           </div>
+        </div>
+
+        {/* Quiz Mode Toggle */}
+        <div className="bg-white rounded border p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4 text-black">Quiz Mode</h2>
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={() => setQuizMode('online')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${quizMode === 'online'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+            >
+              🌐 Online Quiz
+            </button>
+            <button
+              onClick={() => setQuizMode('physical')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${quizMode === 'physical'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+            >
+              🏫 Physical Quiz
+            </button>
+          </div>
+          <p className="text-sm text-slate-600 mb-4">
+            {quizMode === 'online'
+              ? 'Online quiz with integrity monitoring and AI grading.'
+              : 'In-person exam with seating arrangement and synchronized timer.'}
+          </p>
+
+          {/* Seating Grid for Physical Mode */}
+          {quizMode === 'physical' && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h3 className="text-sm font-semibold text-green-900 mb-3">Seating Arrangement</h3>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs text-green-700 mb-1">Rows</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={seatingRows}
+                    onChange={(e) => setSeatingRows(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-green-300 rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-green-700 mb-1">Columns</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={seatingColumns}
+                    onChange={(e) => setSeatingColumns(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-green-300 rounded"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-green-700 mb-3">
+                Total seats: {seatingRows * seatingColumns}
+              </p>
+              {/* Mini Seating Grid Preview */}
+              <div className="bg-white p-3 rounded border border-green-200 overflow-x-auto">
+                <p className="text-xs text-slate-500 mb-2">Seating Grid Preview:</p>
+                <div className="inline-grid gap-1" style={{ gridTemplateColumns: `repeat(${Math.min(seatingColumns, 10)}, 1fr)` }}>
+                  {Array.from({ length: Math.min(seatingRows, 6) * Math.min(seatingColumns, 10) }).map((_, i) => (
+                    <div key={i} className="w-6 h-6 bg-green-100 border border-green-300 rounded-sm flex items-center justify-center text-[8px] text-green-700">
+                      {i + 1}
+                    </div>
+                  ))}
+                </div>
+                {(seatingRows > 6 || seatingColumns > 10) && (
+                  <p className="text-xs text-slate-400 mt-2">... and more seats</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Settings */}
@@ -195,47 +285,49 @@ export default function QuizEditPage() {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ fileUrl: pub.publicUrl, contentType: f.type })
                   });
-                const data = await resp.json().catch(() => ({ ok: false, error: 'Unknown parse error' }));
-                if (resp.ok && (data as any)?.ok) {
-                  const parsed = normalizeQuestions(((data as any)?.questions) || []);
-                  setParsedQuestions(parsed);
-                  setGroupSets([{ name: 'Original', questions: parsed }]);
-                  setActiveSetIndex(0);
-                  setQuestions(parsed);
-                  try {
-                    setGenerating(true);
-                    let totalVars = 0;
-                    if (variantCount > 0 && parsed.length > 0) {
-                      const fullText = serializeQuestionsToText(parsed);
-                      const vresp = await fetch('/api/gemini/variations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ master: fullText, count: variantCount, mode: 'set' }) });
-                      const vdata = await vresp.json().catch(()=>({ ok:false }));
-                      if (vresp.ok && (vdata as any)?.ok) {
-                        const texts = Array.isArray((vdata as any)?.set_texts) ? (vdata as any).set_texts : [];
-                        const sets = texts.map((t: string, i: number) => ({ name: `Var Set ${i + 1}`, questions: normalizeQuestions(parseTextToQuestionsClient(t)) }));
-                        totalVars = sets.length;
-                        const allSets = [{ name: 'Original', questions: parsed }, ...sets];
-                        setGroupSets(allSets);
-                        setActiveSetIndex(0);
-                        try {
-                          const payload = { sets: allSets.map((s) => ({ name: s.name, questions: s.questions })) };
-                          const vblob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-                          await supabase.storage.from('question_banks').upload(`variations/${quizId}.json`, vblob, { upsert: true });
-                        } catch {}
+                  const data = await resp.json().catch(() => ({ ok: false, error: 'Unknown parse error' }));
+                  console.log('[Parse Debug] API Response:', { status: resp.status, ok: resp.ok, data });
+                  if (resp.ok && (data as any)?.ok) {
+                    const parsed = normalizeQuestions(((data as any)?.questions) || []);
+                    console.log('[Parse Debug] Parsed questions:', parsed.length, parsed);
+                    setParsedQuestions(parsed);
+                    setGroupSets([{ name: 'Original', questions: parsed }]);
+                    setActiveSetIndex(0);
+                    setQuestions(parsed);
+                    try {
+                      setGenerating(true);
+                      let totalVars = 0;
+                      if (variantCount > 0 && parsed.length > 0) {
+                        const fullText = serializeQuestionsToText(parsed);
+                        const vresp = await fetch('/api/gemini/variations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ master: fullText, count: variantCount, mode: 'set' }) });
+                        const vdata = await vresp.json().catch(() => ({ ok: false }));
+                        if (vresp.ok && (vdata as any)?.ok) {
+                          const texts = Array.isArray((vdata as any)?.set_texts) ? (vdata as any).set_texts : [];
+                          const sets = texts.map((t: string, i: number) => ({ name: `Var Set ${i + 1}`, questions: normalizeQuestions(parseTextToQuestionsClient(t)) }));
+                          totalVars = sets.length;
+                          const allSets = [{ name: 'Original', questions: parsed }, ...sets];
+                          setGroupSets(allSets);
+                          setActiveSetIndex(0);
+                          try {
+                            const payload = { sets: allSets.map((s) => ({ name: s.name, questions: s.questions })) };
+                            const vblob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                            await supabase.storage.from('question_banks').upload(`variations/${quizId}.json`, vblob, { upsert: true });
+                          } catch { }
+                        }
+                      } else {
+                        setGeneratedCount(0);
                       }
-                    } else {
-                      setGeneratedCount(0);
+                      setGeneratedCount(totalVars);
+                    } finally {
+                      setGenerating(false);
                     }
-                    setGeneratedCount(totalVars);
-                  } finally {
-                    setGenerating(false);
+                  } else {
+                    const detailsRaw = (data as any)?.details;
+                    const fallbackRaw = (data as any)?.fallbackError;
+                    const details = typeof detailsRaw === 'string' ? detailsRaw : JSON.stringify(detailsRaw || {});
+                    const fb = typeof fallbackRaw === 'string' ? fallbackRaw : JSON.stringify(fallbackRaw || {});
+                    alert('Parse failed: ' + ((data as any)?.error || resp.status) + (details ? ('\nDetails: ' + details.substring(0, 400)) : '') + (fb ? ('\nFallback: ' + fb.substring(0, 400)) : ''));
                   }
-                } else {
-                  const detailsRaw = (data as any)?.details;
-                  const fallbackRaw = (data as any)?.fallbackError;
-                  const details = typeof detailsRaw === 'string' ? detailsRaw : JSON.stringify(detailsRaw || {});
-                  const fb = typeof fallbackRaw === 'string' ? fallbackRaw : JSON.stringify(fallbackRaw || {});
-                  alert('Parse failed: ' + ((data as any)?.error || resp.status) + (details ? ('\nDetails: ' + details.substring(0, 400)) : '') + (fb ? ('\nFallback: ' + fb.substring(0, 400)) : ''));
-                }
                 } catch (err) {
                   alert('Parse error');
                 } finally {
@@ -260,7 +352,7 @@ export default function QuizEditPage() {
               <div className="mt-3">
                 <p className="text-sm text-black">Parsed questions: {parsedQuestions.length}</p>
                 <button
-                  onClick={() => setQuestions((prev) => normalizeQuestions([...(prev||[]), ...parsedQuestions]))}
+                  onClick={() => setQuestions((prev) => normalizeQuestions([...(prev || []), ...parsedQuestions]))}
                   className="mt-2 px-3 py-1 bg-blue-600 text-white rounded"
                 >
                   Add Parsed to Editor
@@ -289,12 +381,12 @@ export default function QuizEditPage() {
               </div>
             )}
           </div>
-          
+
           <div className="mb-4 p-4 bg-slate-50 border rounded">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
               <div className="md:col-span-2">
                 <label className="block text-xs text-slate-600 mb-1">Variations to generate after parse (0–10)</label>
-                <input type="number" min={0} max={10} value={variantCount} onChange={(e)=>setVariantCount(parseInt(e.target.value||'3',10))} className="w-32 px-3 py-2 border rounded" />
+                <input type="number" min={0} max={10} value={variantCount} onChange={(e) => setVariantCount(parseInt(e.target.value || '3', 10))} className="w-32 px-3 py-2 border rounded" />
               </div>
               <div>
                 <button
@@ -302,9 +394,14 @@ export default function QuizEditPage() {
                     setGenerating(true);
                     try {
                       const baseQs = Array.isArray(groupSets[activeSetIndex]?.questions) && groupSets[activeSetIndex]?.questions.length > 0 ? groupSets[activeSetIndex].questions : questions;
+                      if (!baseQs || baseQs.length === 0) {
+                        alert('Please add or parse questions first before generating variations.');
+                        setGenerating(false);
+                        return;
+                      }
                       const fullText = serializeQuestionsToText(baseQs);
                       const vresp = await fetch('/api/gemini/variations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ master: fullText, count: Math.max(0, variantCount), mode: 'set' }) });
-                      const vdata = await vresp.json().catch(()=>({ ok:false }));
+                      const vdata = await vresp.json().catch(() => ({ ok: false }));
                       if (vresp.ok && (vdata as any)?.ok) {
                         const texts = Array.isArray((vdata as any)?.set_texts) ? (vdata as any).set_texts : [];
                         const existingVarCount = Math.max(0, (groupSets.length || 0) - 1);
@@ -318,7 +415,7 @@ export default function QuizEditPage() {
                           const payload = { sets: allSets.map((s) => ({ name: s.name, questions: s.questions })) };
                           const vblob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
                           await supabase.storage.from('question_banks').upload(`variations/${quizId}.json`, vblob, { upsert: true });
-                        } catch {}
+                        } catch { }
                       } else {
                         const errText = typeof (vdata as any)?.error === 'string' ? (vdata as any).error : JSON.stringify((vdata as any)?.error || {});
                         const detailsText = typeof (vdata as any)?.details === 'string' ? (vdata as any).details : JSON.stringify((vdata as any)?.details || {});
@@ -378,7 +475,7 @@ export default function QuizEditPage() {
                 </div>
                 {(String(q.type).toLowerCase() === 'mcq' || String(q.type).toLowerCase() === 'boolean') && (
                   <div className="mt-3 space-y-2">
-                    {((String(q.type).toLowerCase() === 'boolean') ? ['True', 'False'] : (Array.isArray(q.choices) ? q.choices : ['Option A', 'Option B'])).map((c, ci) => (
+                    {((String(q.type).toLowerCase() === 'boolean') ? ['True', 'False'] : (Array.isArray(q.choices) ? q.choices : ['Option A', 'Option B'])).map((c: string, ci: number) => (
                       <div key={ci} className="flex items-center gap-2">
                         <span className="text-xs text-slate-600">Choice {ci + 1}</span>
                         <input value={c} onChange={(e) => {

@@ -97,7 +97,7 @@ export default function ResultsPage() {
               setQuestions(qs || []);
             }
           }
-        } catch {}
+        } catch { }
 
         // Fetch all submissions for this quiz
         const { data: submissionsData, error: submissionsError } = await supabase
@@ -117,6 +117,7 @@ export default function ResultsPage() {
             const perQTotals: number[] = [];
             const n = (questions || []).length;
             for (let i = 0; i < n; i++) { perQCounts.push(0); perQTotals.push(0); }
+            const nextGradingPer = new Map<string, any>();
             for (const submission of submissionsData || []) {
               try {
                 const { data: g } = await supabase.storage.from('question_banks').download(`grades/${submission.id}.json`);
@@ -125,6 +126,11 @@ export default function ResultsPage() {
                   const obj = JSON.parse(txt);
                   const tot = Number(obj?.total_score ?? 0);
                   sc.push(tot);
+
+                  // Populate gradingPer state
+                  if (obj?.per_question) {
+                    nextGradingPer.set(submission.id, obj.per_question);
+                  }
                 } else {
                   sc.push(0);
                 }
@@ -145,12 +151,13 @@ export default function ResultsPage() {
                     }
                   }
                 }
-              } catch {}
+              } catch { }
             }
             const rates = perQTotals.map((t, i) => (t > 0 ? Math.round((perQCounts[i] / t) * 100) : 0));
             setClassScores(sc);
             setQuestionCorrect(rates);
-          } catch {}
+            setGradingPer(nextGradingPer);
+          } catch { }
 
           // Fetch violations for each submission
           if (submissionsData && submissionsData.length > 0) {
@@ -197,7 +204,7 @@ export default function ResultsPage() {
                   }
                 }
               }
-            } catch {}
+            } catch { }
             setUserEmails(emails);
             setExtensionLogs(extMap);
           }
@@ -393,7 +400,7 @@ export default function ResultsPage() {
                       return next;
                     });
                   }
-                } catch {}
+                } catch { }
               };
               const onExpandClick = async () => {
                 const nextExpanded = isExpanded ? null : submission.id;
@@ -447,31 +454,31 @@ export default function ResultsPage() {
                           <p className="font-semibold text-slate-900 mb-3">
                             Integrity Violations ({submissionViolations.length})
                           </p>
-              {submissionViolations.map((violation, index) => {
-                const duration = calculateDuration(submissionViolations, index);
-                const isUnauthorized = !violation.is_allowed;
-                const closest = (() => {
-                  const logs = submissionExtLogs;
-                  if (!logs || logs.length === 0) return null;
-                  const vTs = new Date(violation.created_at).getTime();
-                  let best = null as any;
-                  let bestDiff = Infinity;
-                  for (const log of logs) {
-                    const d = Math.abs((new Date(log.ts_ms).getTime()) - vTs);
-                    if (d < bestDiff) { bestDiff = d; best = log; }
-                  }
-                  if (bestDiff > 30000) return null;
-                  return best;
-                })();
-                const destHost = (() => {
-                  if (!closest?.url) return null;
-                  try { return new URL(closest.url).hostname; } catch { return null; }
-                })();
-                const allowedDomains = (quiz?.allowed_websites || '')
-                  .split(',')
-                  .map((w: string) => w.trim().toLowerCase())
-                  .filter((w: string) => w.length > 0);
-                const isDestAllowed = destHost ? allowedDomains.some((d: string) => destHost.toLowerCase().includes(d)) : false;
+                          {submissionViolations.map((violation, index) => {
+                            const duration = calculateDuration(submissionViolations, index);
+                            const isUnauthorized = !violation.is_allowed;
+                            const closest = (() => {
+                              const logs = submissionExtLogs;
+                              if (!logs || logs.length === 0) return null;
+                              const vTs = new Date(violation.created_at).getTime();
+                              let best = null as any;
+                              let bestDiff = Infinity;
+                              for (const log of logs) {
+                                const d = Math.abs((new Date(log.ts_ms).getTime()) - vTs);
+                                if (d < bestDiff) { bestDiff = d; best = log; }
+                              }
+                              if (bestDiff > 30000) return null;
+                              return best;
+                            })();
+                            const destHost = (() => {
+                              if (!closest?.url) return null;
+                              try { return new URL(closest.url).hostname; } catch { return null; }
+                            })();
+                            const allowedDomains = (quiz?.allowed_websites || '')
+                              .split(',')
+                              .map((w: string) => w.trim().toLowerCase())
+                              .filter((w: string) => w.length > 0);
+                            const isDestAllowed = destHost ? allowedDomains.some((d: string) => destHost.toLowerCase().includes(d)) : false;
 
                             return (
                               <div
@@ -581,12 +588,12 @@ export default function ResultsPage() {
                                 const idx = Number(qi);
                                 const prompt = questions[idx]?.prompt || `Question ${idx + 1}`;
                                 const current = per[qi] || { score: '', feedback: '' };
-                return (
-                  <div key={qi} className="p-3 rounded border bg-white fade-in">
+                                return (
+                                  <div key={qi} className="p-3 rounded border bg-white fade-in">
                                     <p className="text-sm font-semibold text-black">{prompt}</p>
                                     <p className="text-sm text-black"><span className="font-mono">Answer:</span> <span className="break-words">{String(val)}</span></p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                                  <div>
+                                      <div>
                                         <label className="text-xs text-black">Score</label>
                                         <input
                                           type="number"

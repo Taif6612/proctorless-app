@@ -990,6 +990,36 @@ function StudentDashboard({ userId, enrollments, onRefresh }: { userId: string; 
   return (
     <div className="grid grid-cols-1 gap-8">
 
+      {/* Download Extension Button */}
+      <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-indigo-900">ProctorLess Focus Extension</p>
+              <p className="text-xs text-indigo-700">Required for taking quizzes with integrity monitoring</p>
+            </div>
+          </div>
+          <a
+            href="/extension/proctorless-focus-extension.zip"
+            download
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm shadow-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download Extension
+          </a>
+        </div>
+        <p className="text-xs text-indigo-600 mt-3">
+          After downloading: Unzip → Chrome Extensions → Enable Developer Mode → Load Unpacked
+        </p>
+      </div>
+
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
         <h2 className="text-2xl font-bold text-slate-900 mb-6">Your Analytics</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

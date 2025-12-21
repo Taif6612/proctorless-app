@@ -89,6 +89,25 @@ export default function StudentWaitingRoomPage() {
                             .update({ status: 'taking', started_at: new Date().toISOString() })
                             .eq('id', participationData.id);
                     }
+
+                    // Create submission if it doesn't exist (required for quiz page)
+                    const { data: existingSub } = await supabase
+                        .from('submissions')
+                        .select('id')
+                        .eq('quiz_id', quizId)
+                        .eq('student_id', currentUser.id)
+                        .maybeSingle();
+
+                    if (!existingSub) {
+                        await supabase
+                            .from('submissions')
+                            .insert({
+                                quiz_id: quizId,
+                                student_id: currentUser.id,
+                                started_at: new Date().toISOString()
+                            });
+                    }
+
                     // Redirect to take quiz with variant info
                     router.push(`/dashboard/quiz/${quizId}?variant=${participationData.variant_index}`);
                 }

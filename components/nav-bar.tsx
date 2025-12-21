@@ -29,7 +29,6 @@ export default function NavBar() {
           <nav className="hidden md:flex items-center gap-6 ml-6"></nav>
         </div>
         {/* Server component for auth state */}
-        {/* @ts-expect-error Async Server Component */}
         <AuthButton />
       </div>
     </header>

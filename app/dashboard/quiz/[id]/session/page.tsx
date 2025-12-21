@@ -86,6 +86,54 @@ export default function SessionControlPage() {
                 .order('joined_at', { ascending: true });
 
             if (participantsData) setParticipants(participantsData as Participant[]);
+        } else {
+            // No existing session - load settings from quiz settings file
+            try {
+                const { data: settingsFile } = await supabase.storage
+                    .from('question_banks')
+                    .download(`settings/${quizId}.json`);
+
+                if (settingsFile) {
+                    const settingsText = await settingsFile.text();
+                    const settings = JSON.parse(settingsText);
+
+                    // Load timer/duration settings
+                    if (typeof settings.duration_minutes === 'number') {
+                        setDurationMinutes(settings.duration_minutes);
+                    }
+
+                    // Load seating settings if available
+                    if (typeof settings.seating_rows === 'number') {
+                        setRows(settings.seating_rows);
+                    }
+                    if (typeof settings.seating_columns === 'number') {
+                        setColumns(settings.seating_columns);
+                    }
+
+                    // Remove late joiner buffer (per user request)
+                    setLateJoinerExtraMinutes(0);
+                }
+            } catch (e) {
+                console.log('No settings file found, using defaults');
+            }
+
+            // Load variant count from variations file
+            try {
+                const { data: variationsFile } = await supabase.storage
+                    .from('question_banks')
+                    .download(`variations/${quizId}.json`);
+
+                if (variationsFile) {
+                    const variationsText = await variationsFile.text();
+                    const variations = JSON.parse(variationsText);
+
+                    // Count sets (Original + generated variants)
+                    const setsCount = Array.isArray(variations?.sets) ? variations.sets.length : 1;
+                    setTotalVariants(Math.max(1, setsCount));
+                }
+            } catch (e) {
+                console.log('No variations file found, using default variant count');
+            }
         }
 
         setLoading(false);

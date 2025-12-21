@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const apiKey = sanitizeKey(process.env.GEMINI_API_KEY);
     if (!apiKey) return NextResponse.json({ ok: false, error: "Missing GEMINI_API_KEY" }, { status: 500 });
     const genai = new GoogleGenAI({ apiKey });
-    const models = ["gemini-2.5-flash", "gemini-1.5-flash"]; 
+    const models = ["gemini-3-flash", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-1.5-flash"];
     const prompt = mode === 'set' ? buildSetPrompt(master, topic, difficulty, count) : buildPrompt(master, topic, difficulty, count);
     const contents = [{ role: 'user', parts: [{ text: prompt }] }];
     let lastErr: any = null;
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
             contents,
             generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
           });
-                  const text = response?.text || response?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || '').join('\n') || "";
+          const text = response?.text || response?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || '').join('\n') || "";
           if (typeof text === "string" && text.length) {
             const m = text.match(/\{[\s\S]*\}/);
             if (m) {
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
                   const arr = Array.isArray(obj?.variations) ? obj.variations : [];
                   return NextResponse.json({ ok: true, variations: arr });
                 }
-              } catch {}
+              } catch { }
             }
             return NextResponse.json({ ok: false, error: "Bad JSON", details: text }, { status: 500 });
           }
@@ -102,10 +102,10 @@ export async function POST(req: NextRequest) {
                       const arr = Array.isArray(obj?.variations) ? obj.variations : [];
                       return NextResponse.json({ ok: true, variations: arr });
                     }
-                  } catch {}
+                  } catch { }
                 }
               }
-            } catch {}
+            } catch { }
           }
           break;
         }

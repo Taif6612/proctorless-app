@@ -34,7 +34,7 @@ export default function QuizPage() {
   const [submission, setSubmission] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Integrity monitoring state
   const [integrityViolations, setIntegrityViolations] = useState<any[]>([]);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
@@ -50,6 +50,7 @@ export default function QuizPage() {
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
   const [settings, setSettings] = useState<{ timer_enabled: boolean; duration_minutes: number; buffer_minutes: number; original_probability: number }>({ timer_enabled: false, duration_minutes: 60, buffer_minutes: 5, original_probability: 0.2 });
   const [startTs, setStartTs] = useState<number>(0);
+  const [sessionStartTs, setSessionStartTs] = useState<number>(0); // Universal session start time
   const [bufferRemaining, setBufferRemaining] = useState<number>(0);
   const [quizRemaining, setQuizRemaining] = useState<number>(0);
 
@@ -84,16 +85,34 @@ export default function QuizPage() {
 
         setQuiz(quizData);
 
+        // Fetch session start_time for universal synchronized timer
+        const { data: sessionData } = await supabase
+          .from('quiz_sessions')
+          .select('start_time, duration_minutes')
+          .eq('quiz_id', quizId)
+          .eq('status', 'live')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (sessionData?.start_time) {
+          setSessionStartTs(new Date(sessionData.start_time).getTime());
+        }
+
         // Fetch submission (should already exist from joinQuiz)
         const { data: submissionData, error: submissionError } = await supabase
           .from('submissions')
           .select('*')
           .eq('quiz_id', quizId)
           .eq('student_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (submissionError || !submissionData) {
-          setError('Submission not found. Please go back and try again.');
+        if (!submissionData) {
+          if (viewGradesOnly) {
+            setError('No submission found for this quiz. You may not have taken this quiz yet.');
+          } else {
+            setError('Submission not found. Please join the quiz through the waiting room first.');
+          }
           setLoading(false);
           return;
         }
@@ -111,7 +130,7 @@ export default function QuizPage() {
             .single();
           effectiveStartedAt = updated?.started_at || nowIso;
         }
-        setStartTs(new Date(effectiveStartedAt).getTime());
+        setStartTs(new Date(effectiveStartedAt || new Date().toISOString()).getTime());
         if (quizData.question_bank_path) {
           try {
             const { data: fileData, error: fileError } = await supabase.storage
@@ -134,7 +153,7 @@ export default function QuizPage() {
                     const vobj = JSON.parse(vtext || '{}');
                     variationGroups = Array.isArray(vobj?.groups) ? vobj.groups : [];
                   }
-                } catch {}
+                } catch { }
 
                 // Check already assigned variants for this submission
                 const { data: existing } = await supabase
@@ -181,9 +200,9 @@ export default function QuizPage() {
                   const mapped = (existing || []).sort((a: any, b: any) => a.question_index - b.question_index).map((r: any) => r.variant).filter(Boolean);
                   if (Array.isArray(mapped) && mapped.length === qs.length) setQuestions(mapped);
                 }
-              } catch {}
+              } catch { }
             }
-          } catch {}
+          } catch { }
         }
         // Load settings
         try {
@@ -201,7 +220,7 @@ export default function QuizPage() {
             };
             setSettings(st);
           }
-        } catch {}
+        } catch { }
         try {
           const { data: gfile } = await supabase.storage
             .from('question_banks')
@@ -217,13 +236,13 @@ export default function QuizPage() {
             });
             setGradePer(normalized);
           }
-        } catch {}
+        } catch { }
         try {
           window.postMessage({ type: 'PROCTORLESS_SUBMISSION_ID', submissionId: submissionData.id }, '*');
-        } catch {}
+        } catch { }
         try {
           await armExtension(submissionData.id);
-        } catch {}
+        } catch { }
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching quiz:', err);
@@ -245,7 +264,7 @@ export default function QuizPage() {
         const obj = JSON.parse(ls || '{}');
         if (obj && typeof obj === 'object') { setAnswers(obj); loaded = true; }
       }
-    } catch {}
+    } catch { }
     if (!loaded) {
       (async () => {
         try {
@@ -258,7 +277,7 @@ export default function QuizPage() {
             const a = pobj?.answers || {};
             if (a && typeof a === 'object') setAnswers(a);
           }
-        } catch {}
+        } catch { }
       })();
     }
   }, [submission, supabase]);
@@ -267,7 +286,7 @@ export default function QuizPage() {
   useEffect(() => {
     if (!submission) return;
     const key = `proctorless_answers_${submission.id}`;
-    try { localStorage.setItem(key, JSON.stringify(answers)); } catch {}
+    try { localStorage.setItem(key, JSON.stringify(answers)); } catch { }
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
       try {
@@ -276,27 +295,30 @@ export default function QuizPage() {
         await supabase.storage
           .from('question_banks')
           .upload(`drafts/${submission.id}.json`, blob, { upsert: true });
-      } catch {}
+      } catch { }
     }, 1500);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [answers, submission, supabase]);
 
-  // Timers derived from persisted startTs
+  // Timers derived from session start time (universal sync) - NO buffer for late comers
   useEffect(() => {
-    if (!startTs) return;
+    // Use session start time if available, otherwise fall back to individual startTs
+    const effectiveStartTs = sessionStartTs || startTs;
+    if (!effectiveStartTs) return;
+
     const interval = setInterval(() => {
       const now = Date.now();
-      const elapsedSec = Math.floor((now - startTs) / 1000);
-      const bufferSec = (settings.buffer_minutes || 5) * 60;
+      const elapsedSec = Math.floor((now - effectiveStartTs) / 1000);
       const durationSec = (settings.duration_minutes || 60) * 60;
-      const bufRem = Math.max(bufferSec - elapsedSec, 0);
-      const quizElapsed = Math.max(elapsedSec - bufferSec, 0);
-      const quizRem = settings.timer_enabled ? Math.max(durationSec - quizElapsed, 0) : 0;
-      setBufferRemaining(bufRem);
+
+      // No buffer - timer starts immediately when session goes live
+      const quizRem = settings.timer_enabled ? Math.max(durationSec - elapsedSec, 0) : 0;
+
+      setBufferRemaining(0); // No buffer
       setQuizRemaining(quizRem);
     }, 1000);
     return () => clearInterval(interval);
-  }, [startTs, settings.buffer_minutes, settings.duration_minutes, settings.timer_enabled]);
+  }, [sessionStartTs, startTs, settings.duration_minutes, settings.timer_enabled]);
 
   // Fetch existing integrity violations for this submission
   useEffect(() => {
@@ -402,7 +424,7 @@ export default function QuizPage() {
         // User switched away from tab
         console.log('🚨 Tab switch detected!');
         console.log('Current referrer:', document.referrer);
-        
+
         const newViolationCount = tabSwitchCount + 1;
         setTabSwitchCount(newViolationCount);
 
@@ -455,7 +477,7 @@ export default function QuizPage() {
       } else {
         // User returned to tab
         console.log('✅ User returned to quiz tab');
-        
+
         /**
          * Optional: When user returns, we could check if they were on an allowed site.
          * However, document.referrer at this point will be the quiz tab itself.
@@ -508,10 +530,10 @@ export default function QuizPage() {
       if (error) throw error;
       try {
         await disarmExtension();
-      } catch {}
+      } catch { }
       try {
         await resetExtensionState();
-      } catch {}
+      } catch { }
 
       alert('Quiz submitted successfully!');
       router.push('/dashboard');
@@ -551,19 +573,20 @@ export default function QuizPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-4xl mx-auto p-8">
-        {/* Floating Timer */}
-        <div className="fixed right-6 top-24 z-50">
-          <div className="bg-white rounded-lg shadow border p-4 min-w-[180px] text-center">
-            <p className="text-xs font-semibold text-slate-600">Buffer</p>
-            <p className="text-lg font-bold text-amber-600">{Math.floor(bufferRemaining/60)}:{String(bufferRemaining%60).padStart(2,'0')}</p>
-            {settings.timer_enabled && (
-              <>
-                <p className="text-xs font-semibold text-slate-600 mt-2">Timer</p>
-                <p className={`text-lg font-bold ${quizRemaining>0? 'text-blue-600':'text-red-600'}`}>{Math.floor(quizRemaining/60)}:{String(quizRemaining%60).padStart(2,'0')}</p>
-              </>
-            )}
+        {/* Floating Timer - Universal Sync */}
+        {settings.timer_enabled && (
+          <div className="fixed right-6 top-24 z-50">
+            <div className="bg-white rounded-lg shadow-lg border-2 border-blue-200 p-4 min-w-[180px] text-center">
+              <p className="text-xs font-semibold text-slate-600 mb-1">⏱️ Time Remaining</p>
+              <p className={`text-2xl font-bold ${quizRemaining > 60 ? 'text-blue-600' : quizRemaining > 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                {Math.floor(quizRemaining / 60)}:{String(quizRemaining % 60).padStart(2, '0')}
+              </p>
+              {quizRemaining === 0 && (
+                <p className="text-xs text-red-600 mt-1 font-medium">Time's up!</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Quiz Header */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-8">
@@ -676,19 +699,19 @@ export default function QuizPage() {
                       )}
                       {type === 'mcq' && choices.length > 0 ? (
                         <div className="space-y-2">
-                      {choices.map((c: string, ci: number) => (
-                        <label key={ci} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="radio"
-                            name={`q_${key}`}
-                            value={c}
-                            checked={(answers[key] || '') === c}
-                            onChange={(e) => handleAnswerChange(key, e.target.value)}
-                            disabled={bufferRemaining>0 || (settings.timer_enabled && quizRemaining===0)}
-                          />
-                          <span>{c}</span>
-                        </label>
-                      ))}
+                          {choices.map((c: string, ci: number) => (
+                            <label key={ci} className="flex items-center gap-2 text-sm">
+                              <input
+                                type="radio"
+                                name={`q_${key}`}
+                                value={c}
+                                checked={(answers[key] || '') === c}
+                                onChange={(e) => handleAnswerChange(key, e.target.value)}
+                                disabled={bufferRemaining > 0 || (settings.timer_enabled && quizRemaining === 0)}
+                              />
+                              <span>{c}</span>
+                            </label>
+                          ))}
                         </div>
                       ) : type === 'boolean' ? (
                         <div className="space-y-2">
@@ -711,7 +734,7 @@ export default function QuizPage() {
                           value={answers[key] || ''}
                           onChange={(e) => handleAnswerChange(key, e.target.value)}
                           className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={bufferRemaining>0 || (settings.timer_enabled && quizRemaining===0)}
+                          disabled={bufferRemaining > 0 || (settings.timer_enabled && quizRemaining === 0)}
                         />
                       ) : (
                         <textarea
@@ -719,7 +742,7 @@ export default function QuizPage() {
                           onChange={(e) => handleAnswerChange(key, e.target.value)}
                           placeholder="Type your answer here..."
                           className="w-full h-24 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={bufferRemaining>0 || (settings.timer_enabled && quizRemaining===0)}
+                          disabled={bufferRemaining > 0 || (settings.timer_enabled && quizRemaining === 0)}
                         />
                       )}
                       {submission?.submitted_at && (() => {
@@ -740,7 +763,7 @@ export default function QuizPage() {
                                   return q.choices?.[ci];
                                 }
                                 if (type === 'boolean') {
-                                  if (typeof q?.correct_index === 'number') return ['True','False'][q.correct_index];
+                                  if (typeof q?.correct_index === 'number') return ['True', 'False'][q.correct_index];
                                   return q?.expected_answer as any;
                                 }
                                 if (type === 'numeric') return q?.expected_answer as any;

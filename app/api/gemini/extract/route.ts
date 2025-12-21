@@ -63,7 +63,7 @@ async function callGeminiImage(b64: string, mimeType: string) {
   if (!apiKey) return { error: "Missing GEMINI_API_KEY" };
   try {
     const genai = new GoogleGenAI({ apiKey });
-    const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
+    const models = ["gemini-3-flash", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-1.5-flash"];
     const contents = [
       {
         role: 'user',
@@ -98,7 +98,7 @@ async function callGeminiImage(b64: string, mimeType: string) {
           }
           const part = response?.candidates?.[0]?.content?.parts?.[0];
           if (part) {
-            try { return { result: JSON.parse(JSON.stringify(part)) }; } catch {}
+            try { return { result: JSON.parse(JSON.stringify(part)) }; } catch { }
           }
           lastErr = response;
         } catch (e: any) {
@@ -127,7 +127,7 @@ async function callGeminiImage(b64: string, mimeType: string) {
                   if (fallback.length > 0) return { result: { questions: fallback } };
                 }
               }
-            } catch {}
+            } catch { }
           }
           break;
         }
