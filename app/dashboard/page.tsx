@@ -1207,6 +1207,7 @@ function StudentDashboard({ userId, enrollments, onRefresh }: { userId: string; 
 }
 
 function AdminDashboard() {
+  const router = useRouter();
   const supabase = createClient();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('student');
