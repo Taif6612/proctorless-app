@@ -62,7 +62,7 @@ export default function MachineRegistryPage() {
             .eq('user_id', currentUser.id)
             .single();
 
-        if (!roleData || !['professor', 'admin'].includes(roleData.role)) {
+        if (!roleData || roleData.role !== 'admin') {
             router.push('/dashboard');
             return;
         }

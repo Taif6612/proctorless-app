@@ -1214,7 +1214,7 @@ function AdminDashboard() {
   const [saving, setSaving] = useState(false);
   const [counts, setCounts] = useState<{ users: number; quizzes: number; submissions: number } | null>(null);
   const [instPerf, setInstPerf] = useState<{ name: string; avg: number }[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'roles' | 'users' | 'courses' | 'quizzes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'roles' | 'users' | 'courses' | 'quizzes' | 'machines'>('overview');
   const [coursesList, setCoursesList] = useState<any[]>([]);
   const [quizzesList, setQuizzesList] = useState<any[]>([]);
   const [tabLoading, setTabLoading] = useState(false);
@@ -1321,10 +1321,10 @@ function AdminDashboard() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Admin</h1>
-            <p className="text-slate-500 mt-2">Manage roles, users, courses and quizzes</p>
+            <p className="text-slate-500 mt-2">Manage roles, users, courses, quizzes and lab machines</p>
           </div>
           <div className="flex flex-wrap gap-2 mb-6">
-            {(['overview', 'roles', 'users', 'courses', 'quizzes'] as const).map((tab) => (
+            {(['overview', 'roles', 'users', 'courses', 'quizzes', 'machines'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1443,7 +1443,7 @@ function AdminDashboard() {
           {activeTab === 'overview' && (
             <div>
               {counts && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-white rounded-xl border p-6">
                     <p className="text-sm text-slate-600">Active Users</p>
                     <p className="text-3xl font-bold text-slate-900">{counts.users}</p>
@@ -1455,6 +1455,18 @@ function AdminDashboard() {
                   <div className="bg-white rounded-xl border p-6">
                     <p className="text-sm text-slate-600">Total Submissions</p>
                     <p className="text-3xl font-bold text-slate-900">{counts.submissions}</p>
+                  </div>
+                  <div
+                    onClick={() => setActiveTab('machines')}
+                    className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6 text-white cursor-pointer hover:shadow-lg transition-all group"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm opacity-80">Machine Registry</p>
+                        <p className="text-xl font-bold">Manage Labs</p>
+                      </div>
+                      <span className="text-2xl group-hover:scale-110 transition-transform">🖥️</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1519,6 +1531,24 @@ function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'machines' && (
+            <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+              <div className="w-20 h-20 bg-indigo-100 rounded-2xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-inner">
+                🖥️
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">Machine Registry</h2>
+              <p className="text-slate-600 mb-8 max-w-sm mx-auto">
+                Manage physical lab machines, fingerprints, and seat mappings for automatic quiz variant assignment.
+              </p>
+              <button
+                onClick={() => router.push('/dashboard/machines')}
+                className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+              >
+                Open Machine Manager
+              </button>
             </div>
           )}
         </div>

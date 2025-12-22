@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
           const response: any = await genai.models.generateContent({
             model,
             contents,
+            // @ts-ignore
             generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
           });
           const text = response?.text || response?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || '').join('\n') || "";
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
               const response: any = await genai.models.generateContent({
                 model: 'gemini-1.5-pro',
                 contents,
+                // @ts-ignore
                 generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
               });
               const text = response?.text || response?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || '').join('\n') || "";
