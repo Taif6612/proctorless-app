@@ -160,6 +160,15 @@ export default function AutoJoinQuizPage() {
                 participantStatus = 'seated';
 
                 console.log('[AutoJoin] Machine identified, auto-assigning:', { seatRow, seatColumn, variantIndex });
+
+                // Sync machine identity back to extension
+                try {
+                    const machineLabel = machineResult.identification.machine.label ||
+                        `Row ${seatRow + 1}, Col ${seatColumn + 1}`;
+                    window.postMessage({ type: 'PROCTORLESS_MACHINE_ID', machineId: machineLabel }, '*');
+                } catch (e) {
+                    console.error('[AutoJoin] Failed to sync machine ID to extension:', e);
+                }
             } else {
                 console.log('[AutoJoin] Machine not recognized, waiting for manual assignment');
             }
