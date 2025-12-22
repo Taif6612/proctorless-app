@@ -59,21 +59,36 @@ export interface MachineRegistration {
 // ============================================
 export function isExtensionAvailable(): Promise<boolean> {
     return new Promise((resolve) => {
-        // Listen for extension ready message
+        let resolved = false;
+
+        const cleanup = () => {
+            window.removeEventListener('message', handler);
+        };
+
         const handler = (event: MessageEvent) => {
-            if (event.data?.type === 'PROCTORLESS_EXTENSION_READY') {
-                window.removeEventListener('message', handler);
-                resolve(true);
+            if (event.data?.type === 'PROCTORLESS_EXTENSION_READY' ||
+                event.data?.type === 'PROCTORLESS_PONG') {
+                if (!resolved) {
+                    resolved = true;
+                    cleanup();
+                    resolve(true);
+                }
             }
         };
 
         window.addEventListener('message', handler);
 
-        // Timeout after 500ms
+        // 1. Send PING to see if it's already loaded
+        window.postMessage({ type: 'PROCTORLESS_PING' }, '*');
+
+        // 2. Also wait briefly for the READY message if it just finished loading
         setTimeout(() => {
-            window.removeEventListener('message', handler);
-            resolve(false);
-        }, 500);
+            if (!resolved) {
+                resolved = true;
+                cleanup();
+                resolve(false);
+            }
+        }, 1000); // Increased timeout to 1s for better reliability
     });
 }
 

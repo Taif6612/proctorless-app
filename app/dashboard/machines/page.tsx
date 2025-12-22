@@ -206,12 +206,27 @@ export default function MachineRegistryPage() {
                                     <p className="text-slate-600 mb-4">
                                         Install the ProctorLess Focus extension to register this machine.
                                     </p>
-                                    <button
-                                        onClick={() => setShowRegisterForm(false)}
-                                        className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl"
-                                    >
-                                        Close
-                                    </button>
+                                    <div className="flex flex-col gap-2 max-w-xs mx-auto">
+                                        <button
+                                            onClick={async () => {
+                                                const available = await isExtensionAvailable();
+                                                setExtensionReady(available);
+                                                if (available) {
+                                                    const fp = await getMachineFingerprint();
+                                                    setFingerprint(fp);
+                                                }
+                                            }}
+                                            className="px-4 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition shadow-md"
+                                        >
+                                            🔄 Retry Detection
+                                        </button>
+                                        <button
+                                            onClick={() => setShowRegisterForm(false)}
+                                            className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition"
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
                                 </div>
                             ) : !fingerprint ? (
                                 <div className="text-center py-8">
@@ -223,7 +238,14 @@ export default function MachineRegistryPage() {
                                     {/* Fingerprint Info */}
                                     <div className="bg-slate-50 rounded-xl p-4 mb-6">
                                         <p className="text-xs text-slate-500 mb-2">Fingerprint Hash (first 16 chars)</p>
-                                        <p className="font-mono text-sm text-slate-700">{fingerprint.hash.substring(0, 16)}...</p>
+                                        <p className="font-mono text-sm text-slate-700">
+                                            {fingerprint.hash ? `${fingerprint.hash.substring(0, 16)}...` : <span className="text-red-500 italic">Failed to generate hash</span>}
+                                        </p>
+                                        {(fingerprint as any).error && (
+                                            <p className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100 italic">
+                                                Error: {(fingerprint as any).error}
+                                            </p>
+                                        )}
                                         <div className="mt-2 text-xs text-slate-500">
                                             <p>GPU: {fingerprint.components.gpu}</p>
                                             <p>Screen: {fingerprint.components.screen}</p>
@@ -317,7 +339,7 @@ export default function MachineRegistryPage() {
                                         </button>
                                         <button
                                             type="submit"
-                                            disabled={registering || !labName}
+                                            disabled={registering || !labName || !fingerprint?.hash}
                                             className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl disabled:opacity-50"
                                         >
                                             {registering ? 'Registering...' : 'Register Machine'}
@@ -346,18 +368,21 @@ export default function MachineRegistryPage() {
                     </div>
                 ) : (
                     Object.entries(labs).map(([labName, labMachines]) => (
-                        <div key={labName} className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg mb-6">
-                            <h2 className="text-xl font-bold text-slate-800 mb-4">{labName}</h2>
+                        <div key={labName} className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/40 mb-6">
+                            <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <span className="p-2 bg-indigo-100 rounded-lg text-lg">🏢</span>
+                                {labName}
+                            </h2>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="text-left text-sm text-slate-600 border-b">
-                                            <th className="pb-2">Label</th>
-                                            <th className="pb-2">Position</th>
-                                            <th className="pb-2">Variant</th>
-                                            <th className="pb-2">Fingerprint</th>
-                                            <th className="pb-2">Last Seen</th>
-                                            <th className="pb-2">Actions</th>
+                                        <tr className="text-left text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                                            <th className="pb-3 px-2 font-bold">Label</th>
+                                            <th className="pb-3 px-2 font-bold">Position</th>
+                                            <th className="pb-3 px-2 font-bold">Variant</th>
+                                            <th className="pb-3 px-2 font-bold">Fingerprint</th>
+                                            <th className="pb-3 px-2 font-bold">Last Seen</th>
+                                            <th className="pb-3 px-2 font-bold text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -365,26 +390,26 @@ export default function MachineRegistryPage() {
                                             const variantIndex = ((machine.row_index * 3) + machine.column_index) % 3;
                                             const variantLabel = String.fromCharCode(65 + variantIndex);
                                             return (
-                                                <tr key={machine.id} className="border-b border-slate-100">
-                                                    <td className="py-3 font-medium">{machine.machine_label || '-'}</td>
-                                                    <td className="py-3">Row {machine.row_index + 1}, Col {machine.column_index + 1}</td>
+                                                <tr key={machine.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                                                    <td className="py-4 px-2 font-bold text-slate-900">{machine.machine_label || '-'}</td>
+                                                    <td className="py-4 px-2 text-slate-700 font-medium">Row {machine.row_index + 1}, Col {machine.column_index + 1}</td>
                                                     <td className="py-3">
                                                         <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded font-semibold">
                                                             {variantLabel}
                                                         </span>
                                                     </td>
-                                                    <td className="py-3 font-mono text-xs text-slate-500">
+                                                    <td className="py-4 px-2 font-mono text-xs text-slate-400">
                                                         {machine.fingerprint_hash.substring(0, 12)}...
                                                     </td>
-                                                    <td className="py-3 text-sm text-slate-500">
+                                                    <td className="py-4 px-2 text-sm text-slate-600">
                                                         {machine.last_seen_at
                                                             ? new Date(machine.last_seen_at).toLocaleDateString()
                                                             : 'Never'}
                                                     </td>
-                                                    <td className="py-3">
+                                                    <td className="py-4 px-2 text-right">
                                                         <button
                                                             onClick={() => handleDelete(machine.id, machine.machine_label || 'this machine')}
-                                                            className="text-red-600 hover:text-red-800 text-sm"
+                                                            className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
                                                         >
                                                             Delete
                                                         </button>
