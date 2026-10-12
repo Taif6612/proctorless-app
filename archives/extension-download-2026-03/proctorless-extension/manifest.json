@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "ProctorLess Focus",
+  "version": "1.0.0",
+  "description": "Privacy-first URL logging during exams. Logs active tab URLs while armed, no webcam or page contents.",
+  "permissions": [
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://localhost:3001/*",
+    "http://localhost:3002/*",
+    "http://localhost:3003/*",
+    "https://*.vercel.app/*",
+    "https://*.supabase.co/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ProctorLess Focus"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:3000/*",
+        "http://localhost:3001/*",
+        "http://localhost:3002/*",
+        "http://localhost:3003/*",
+        "https://*.vercel.app/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:3000/*",
+      "http://localhost:3001/*",
+      "http://localhost:3002/*",
+      "http://localhost:3003/*",
+      "https://*.vercel.app/*"
+    ]
+  }
+}

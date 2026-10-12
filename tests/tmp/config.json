@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3003",
+  "loginUser": "abdullahesthiak@gmail.com",
+  "loginPassword": "zxcv12345",
+  "executionArgs": {
+    "projectName": "Smart assessment tool",
+    "projectPath": "c:\\Users\\ASUS\\Desktop\\Smart assessment tool",
+    "testIds": [],
+    "additionalInstruction": "Use baseUrl http://localhost:3003/ . Ensure any auth is bypassed or tests use allowed routes. Generate a raw markdown report and a summarized report.",
+    "envs": {
+      "API_KEY": "sk-user-qa3Vnrw-oATcqwEuZuyhQldP24D9TcdRep-iJD39862Lajip0pJpjNFtQ9x_6Pfzq3IFEPWw9jUCdvLAafK7g1uzOw_c_2WEGoLgTSO9Uhwe_CI6AszH_4a78UewSAg7OIs"
+    }
+  },
+  "proxy": "http://4306e83c-6ab3-44cc-907b-14f63527808a:6mActmpcM1Zg2GCqGLmUkj7CMp3RpCYe@tun.testsprite.com:8080"
+}

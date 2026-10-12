@@ -1,0 +1,84 @@
+Got it. One week and free only. That's the most important constraint.
+
+That means we can't use complex tools. We need the fastest, simplest, 100% free-tier-friendly path. Forget building from scratch—we must use no-code tools and AI to generate any code we need.
+
+I've built the research prompt based on all your answers. It's designed to get you a practical, day-by-day plan that respects your 1-week, $0 budget.
+
+Deep Research Request: Privacy-Aware Smart Assessment System (MVP)
+I'm a non-technical founder building a "Privacy-Aware Smart Assessment System" for a 1-week university project. It's a website for professors that's a "fairness & privacy" alternative to creepy proctoring.
+
+The MVP is just three things:
+
+A simple quiz tool (for a professor to create a quiz).
+
+A "privacy-aware" tab-switch monitor (to detect when a student clicks away).
+
+A simple "Integrity Log" (for the professor to see the results and tab-switch alerts).
+
+My constraints are 100% free tools and a 1-week timeline. I need beginner-friendly research using the latest 2025 AI tools.
+
+Key Questions:
+What is the absolute fastest way to build this MVP in one week using only free tools?
+
+What are the best free no-code/low-code tools (like Bubble, Glide, WeWeb, Retool) that can build a simple quiz AND allow custom JavaScript for the tab-switch detection?
+
+What is the simplest JavaScript code to detect a "tab-switch" (browser tab loses focus), and how do I integrate that into a free no-code tool?
+
+What are the best free-tier database options (e.g., Supabase, Firebase, Google Sheets) that work with these no-code tools?
+
+What AI tools (like Claude Code, Cursor, or Gemini) can write the code for me for the tab-switch detection and the dashboard logic?
+
+Research Focus:
+Simple, actionable insights with copy-paste examples.
+
+2025 free-tier tool recommendations (I cannot pay for anything).
+
+Step-by-step guidance for the 1-week timeline.
+
+Focus 100% on free-tier limitations (e.g., free database limits, user limits).
+
+AI agent recommendations for building these specific features.
+
+Deliverables Needed:
+Comparison Table of Free No-Code Tools: (e.g., Bubble vs. WeWeb vs. Glide). Which is fastest to learn and has a 100% free plan that works for this?
+
+Recommended Free "Stack": (e.g., "Use [No-Code Tool] + [Free Database]").
+
+A Step-by-Step 7-Day Plan: A practical timeline (e.g., "Day 1: Set up database. Day 2: Build quiz page. Day 3: Add tab-switch code...").
+
+A Simple JavaScript Snippet: The exact code to detect "tab focus" or "visibility change," with an explanation of how to add it to the recommended no-code tool.
+
+List of AI Prompts: 3-5 specific prompts I can give an AI (like Claude Code) to generate the code for the tab-switch detection and the "Integrity Log" dashboard.
+
+List of Best AI Coding Assistants for non-coders on a free plan.
+
+Please use Gemini 2.5 Pro for comprehensive analysis or Claude Sonnet 4.5 for technical accuracy. Explain everything in plain English with examples. Include specific URLs and tool names.
+
+I've created your research prompt above. Here's how to get the best results:
+
+Recommended AI Platforms for Research:
+AI Studio (FREE) - Best for comprehensive research with Gemini 2.5 Pro
+
+Go to: https://gemini.google.com
+
+1M token context window perfect for research
+
+Claude.ai - Best for technical accuracy with Claude Sonnet 4.5
+
+Go to: https://claude.ai
+
+Superior code and architecture analysis but needs a paid account
+
+ChatGPT - Good for quick iterations with GPT-5
+
+Go to: https://chat.openai.com
+
+Short responses and good research capabilities
+
+Free tier: 5 Deep Researches a Month
+
+Copy the research prompt and paste it into your chosen platform. The research may take 10-20 minutes to complete.
+
+Pro tip: Use Gemini 2.5 Pro (in AI Studio) for the main research, then use Claude Sonnet 4.5 to validate the JavaScript code it gives you.
+
+Would you like me to adjust anything in the prompt before you begin?

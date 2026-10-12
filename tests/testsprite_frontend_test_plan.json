@@ -1,0 +1,20 @@
+{
+  "testPlan": {
+    "id": "frontend-smoke",
+    "title": "Frontend Smoke Tests",
+    "description": "Run end-to-end smoke checks for core UI routes: home, dashboard, quiz editor, and student quiz. Verify essential labels like 'Add Questions', 'Timer Settings', 'Enable Timer', and 'Time Remaining' appear to confirm rendering and visibility after recent UI fixes.",
+    "type": "frontend",
+    "needLogin": false,
+    "baseUrl": "http://localhost:3003",
+    "steps": [
+      { "id": "open-home", "action": "navigate", "path": "/" },
+      { "id": "open-dashboard", "action": "navigate", "path": "/dashboard" },
+      { "id": "assert-dashboard-text", "action": "assertText", "text": "Add Questions" },
+      { "id": "open-quiz-edit", "action": "navigate", "path": "/dashboard/quiz/1/edit" },
+      { "id": "assert-timer-settings", "action": "assertText", "text": "Timer Settings" },
+      { "id": "assert-enable-timer", "action": "assertText", "text": "Enable Timer" },
+      { "id": "open-student-quiz", "action": "navigate", "path": "/dashboard/quiz/1" },
+      { "id": "assert-floating-timer", "action": "assertText", "text": "Time Remaining" }
+    ]
+  }
+}

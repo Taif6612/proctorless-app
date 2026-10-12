@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "project": "ProctorLess",
+    "date": "2025-11-14",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "ProctorLess is a privacy-first smart assessment platform designed for university professors and students to conduct online exams with integrity monitoring, AI-assisted grading, and seamless quiz management, reducing stress and manual workload while respecting privacy.",
+  "core_goals": [
+    "Enable university professors to create and manage courses and quizzes easily in one unified platform.",
+    "Provide students with a straightforward, non-invasive quiz-taking experience focusing on privacy and fairness.",
+    "Implement a privacy-respecting integrity monitor that tracks tab switches without invasive methods like webcams.",
+    "Offer AI-assisted grading tools to significantly reduce professors' manual grading time.",
+    "Ensure a clean, minimal, and academic UI/UX that builds trust and clarity for all users.",
+    "Enable role-based user access distinguishing between professors and students.",
+    "Support real-time logging and review of student quiz integrity data and grading results."
+  ],
+  "key_features": [
+    "User Authentication and Role Assignment allowing Professors and Students to securely log in and access role-specific dashboards.",
+    "Course Management enabling professors to create courses and distribute unique join codes for student enrollment.",
+    "Quiz Creation Form with options to upload question banks, enable integrity monitoring, allowlist permitted websites, and toggle AI-assisted grading.",
+    "Student Quiz Engine displaying randomized questions from the uploaded bank, supporting multiple-choice and essay answers, with autosave and submission functions.",
+    "Privacy-First Integrity Monitoring to detect and log tab switches unless on allowed websites, capturing timestamps and linking data to the student and quiz.",
+    "AI-Assisted Grading via a button on the Results page, invoking a Supabase Edge Function connected to Gemini AI for real-time grade and feedback suggestions with manual override capabilities.",
+    "Results and Integrity Log Dashboard allowing professors to view quiz grades and detailed tab-switch logs per student."
+  ],
+  "user_flow_summary": [
+    "Professor logs in and accesses the main dashboard listing courses.",
+    "Professor creates a new course and obtains a unique join code.",
+    "Professor initiates quiz creation via a form, setting title, uploading question bank, and configuring integrity monitoring, allowed websites, and AI grading options.",
+    "Students log in, join courses by entering the join code, and see quizzes to take.",
+    "Student opens a quiz, views rules, completes randomized questions, and submits answers.",
+    "Tab switches by the student during a quiz are detected and logged excluding allowed sites.",
+    "Professor reviews results on the dashboard, inspects integrity logs for suspicious behavior, and uses the AI-assisted grading button to expedite essay grading."
+  ],
+  "validation_criteria": [
+    "Users can sign up and log in with assigned roles; professors and students access respective dashboards correctly.",
+    "Professors can create courses that generate unique join codes; students use codes to join courses successfully.",
+    "The quiz creation form accepts question bank files, respects form inputs for monitors and allowed sites, and saves quizzes properly.",
+    "Students see randomized quiz questions and can answer and submit multiple-choice and essay types with autosave functioning.",
+    "Integrity Monitor logs all tab switches with correct metadata except when the student visits allowed URLs.",
+    "AI grading button calls a Supabase Edge Function that interacts with the live Gemini AI API and returns grade suggestions visible to the professor.",
+    "Results dashboard lists student submissions, grades, and detailed integrity logs accessible by clicking student names.",
+    "The entire end-to-end flow — professor creating course/quiz, student taking and submitting quiz, and professor reviewing results with AI grading — works seamlessly on desktop browsers.",
+    "The system is deployed and tested with no critical bugs blocking a demo presentation."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "Next.js 16 (App Router, Turbopack)",
+      "Supabase (Auth, Postgres, Storage)",
+      "TailwindCSS",
+      "@google/genai (Gemini)"
+    ],
+    "features": [
+      {
+        "name": "Profile Settings",
+        "description": "User profile view/edit including Supabase-backed data fetch",
+        "files": [
+          "proctorless-app/components/profile-settings.tsx",
+          "proctorless-app/app/profile/page.tsx",
+          "proctorless-app/app/profile/design-preview/page.tsx"
+        ]
+      },
+      {
+        "name": "Gemini Extract API",
+        "description": "Server route to parse uploaded images via Gemini with OCR fallback",
+        "files": [
+          "proctorless-app/app/api/gemini/extract/route.ts",
+          "proctorless-app/app/api/gemini/test/route.ts",
+          "proctorless-app/app/api/gemini/diag/route.ts",
+          "proctorless-app/middleware.ts"
+        ]
+      },
+      {
+        "name": "Dashboard",
+        "description": "Instructor dashboard with add questions and navigation to quiz editor",
+        "files": [
+          "proctorless-app/app/dashboard/page.tsx"
+        ]
+      },
+      {
+        "name": "Quiz Editor",
+        "description": "Edit quiz questions, timer settings, reorder/delete, marks, expected answers",
+        "files": [
+          "proctorless-app/app/dashboard/quiz/[id]/edit/page.tsx"
+        ]
+      },
+      {
+        "name": "Student Quiz Page",
+        "description": "Student answering UI with floating timer, buffer enforcement, autosave drafts",
+        "files": [
+          "proctorless-app/app/dashboard/quiz/[id]/page.tsx"
+        ]
+      },
+      {
+        "name": "Results Page",
+        "description": "Professor results view with edit link and readable extension logs",
+        "files": [
+          "proctorless-app/app/dashboard/results/[quizId]/page.tsx"
+        ]
+      }
+    ]
+  }
+}

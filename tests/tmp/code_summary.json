@@ -1,0 +1,58 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "Next.js 16 (App Router, Turbopack)",
+    "Supabase (Auth, Postgres, Storage)",
+    "TailwindCSS",
+    "@google/genai (Gemini)"
+  ],
+  "features": [
+    {
+      "name": "Profile Settings",
+      "description": "User profile view/edit including Supabase-backed data fetch",
+      "files": [
+        "proctorless-app/components/profile-settings.tsx",
+        "proctorless-app/app/profile/page.tsx",
+        "proctorless-app/app/profile/design-preview/page.tsx"
+      ]
+    },
+    {
+      "name": "Gemini Extract API",
+      "description": "Server route to parse uploaded images via Gemini with OCR fallback",
+      "files": [
+        "proctorless-app/app/api/gemini/extract/route.ts",
+        "proctorless-app/app/api/gemini/test/route.ts",
+        "proctorless-app/app/api/gemini/diag/route.ts",
+        "proctorless-app/middleware.ts"
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "Instructor dashboard with add questions and navigation to quiz editor",
+      "files": [
+        "proctorless-app/app/dashboard/page.tsx"
+      ]
+    },
+    {
+      "name": "Quiz Editor",
+      "description": "Edit quiz questions, timer settings, reorder/delete, marks, expected answers",
+      "files": [
+        "proctorless-app/app/dashboard/quiz/[id]/edit/page.tsx"
+      ]
+    },
+    {
+      "name": "Student Quiz Page",
+      "description": "Student answering UI with floating timer, buffer enforcement, autosave drafts",
+      "files": [
+        "proctorless-app/app/dashboard/quiz/[id]/page.tsx"
+      ]
+    },
+    {
+      "name": "Results Page",
+      "description": "Professor results view with edit link and readable extension logs",
+      "files": [
+        "proctorless-app/app/dashboard/results/[quizId]/page.tsx"
+      ]
+    }
+  ]
+}
